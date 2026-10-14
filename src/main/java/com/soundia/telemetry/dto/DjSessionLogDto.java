@@ -1,6 +1,6 @@
 package com.soundia.telemetry.dto;
 
 public record DjSessionLogDto(
-        String controlName,
-        int midiValue
+        Integer controlId,
+        Integer value 
         ){}

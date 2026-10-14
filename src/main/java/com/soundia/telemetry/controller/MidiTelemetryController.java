@@ -22,11 +22,8 @@ public class MidiTelemetryController {
     public ResponseEntity<String> receiveMidiEvent(@RequestBody DjSessionLogDto dto){
         // Mapeo manual: Transferimos datos DTO seguro a la Entidad de BD.
         DjSessionLog logEvent = new DjSessionLog();
-        logEvent.setControlName(dto.controlName());
-        logEvent.setMidiValue(dto.midiValue());
-        
-        // Asignamos la hora real del servidor, ignorando si el PC del DJ tiene la hora mal configurada.
-        logEvent.setTimestamp(System.currentTimeMillis());
+        logEvent.setControlId(dto.controlId());
+        logEvent.setValue(dto.value());
         
         // El evento ya validado ingresa a la linea de ensamblaje (BD e IA asincronos)
         reader.notifyObservers(logEvent);
