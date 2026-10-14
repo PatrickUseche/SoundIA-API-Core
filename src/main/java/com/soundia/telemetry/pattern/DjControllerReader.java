@@ -10,15 +10,18 @@ import java.util.List;
 public class DjControllerReader{
     private final List<MidiObserver> observers = new ArrayList<>();
     private final DatabaseMidiObserver databaseMidiObserver;
+    private final AiMidiObserver aiMidiObserver;
 
-    public DjControllerReader(DatabaseMidiObserver databaseMidiObserver) {
+    public DjControllerReader(DatabaseMidiObserver databaseMidiObserver, AiMidiObserver aiMidiObserver) {
         this.databaseMidiObserver = databaseMidiObserver;
+        this.aiMidiObserver = aiMidiObserver;
     }
     
     @PostConstruct
     public void init(){
         // Vincula el observador de BD al Sujeto en el momento en que Spring Boot arranca.
         this.attach(databaseMidiObserver);
+        this.attach(aiMidiObserver);
     }
     
     public void attach(MidiObserver observer){
