@@ -1,10 +1,13 @@
 package com.soundia.telemetry.pattern;
 
 import com.soundia.telemetry.model.DjSessionLog;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AiMidiObserver implements MidiObserver{
+    
+    @Async
     @Override
     public void onMidiEvent(DjSessionLog logEvent){
         // Aqui se conectara el modelo de IA para la mezcla automatica.
