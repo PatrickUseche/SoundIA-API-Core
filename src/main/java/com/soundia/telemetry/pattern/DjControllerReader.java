@@ -26,7 +26,7 @@ public class DjControllerReader{
     }
     
     // Se ejecuta asincronamente cuando el hardware envia una senal MIDI.
-    public void notifyObserves(DjSessionLog logEvent){
+    public void notifyObservers(DjSessionLog logEvent){
         for(MidiObserver observer : observers){
             observer.onMidiEvent(logEvent);
         }
