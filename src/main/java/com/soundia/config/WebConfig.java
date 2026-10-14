@@ -11,7 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry){
         // Habilita que el frontend en Angular consulte unicamente al backend en Java.
         registry.addMapping("/api/**")
-                .allowedOrigin("http://localhost:4200")
+                .allowedOrigins("http://localhost:4200")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
     }
 }
