@@ -1,6 +1,5 @@
 package com.soundia.telemetry.controller;
 
-import com.soundia.telemetry.model.DjSessionLog;
 import com.soundia.telemetry.pattern.DjControllerReader;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +9,7 @@ import com.soundia.telemetry.repository.DjSessionLogRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 import org.springframework.web.client.RestTemplate;
+import com.soundia.telemetry.dto.AiDecisionDto;
 
 @RestController
 @RequestMapping("/api/v1/midi")
