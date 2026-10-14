@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
 
 @Component
 public class AiMidiObserver implements MidiObserver{
@@ -19,16 +22,19 @@ public class AiMidiObserver implements MidiObserver{
     }
     
     @Async
+    @Retryable(
+            value = { RestClientException.class }, // Solo reintenta si es error de red.
+            maxAttempts = 3, // Maximo 3 intentos.
+            backoff = @Backoff(delay = 2000) // Espera 2 segundos entre cada intento.
+    )
     @Override
     public void onMidiEvent(DjSessionLog logEvent){
-        try{
-            // Spring Boot toma el objeto logEvent, lo serializa a JSON internamente,
-            // y hace un POST hacia la URL del motor en Python.
-            ResponseEntity<String> response = restTemplate.postForEntity(pythonAiUrl, logEvent, String.class);
-            System.out.println("[Motor IA] Transicion calculada por Python: " + response.getBody());    
-        } catch (RestClientException e){
-            // Si el servidor de Python esta apagado, el error se atrapa aqui sin tumbar la aplicacion Java.
-            System.err.println("[Motor IA] Advertencia - Motor Python inalcanzable: " + e.getMessage());
-        }
+        ResponseEntity<String> response = restTemplate.postForEntity(pythonAiUrl, logEvent, String.class);
+        System.out.println("[Motor IA] Transicion calculada por Python: " + response.getBody());
+    }
+    
+    @Recover
+    public void recover(RestClientException e, DjSessionLog logEvent){
+        System.err.println("[Motor IA] Abortado tras 3 reintentos. Django no responde para el control: " + logEvent.getControlId());
     }
 }
