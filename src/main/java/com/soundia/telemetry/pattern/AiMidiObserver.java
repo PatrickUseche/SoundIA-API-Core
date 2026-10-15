@@ -1,6 +1,9 @@
 package com.soundia.telemetry.pattern;
 
 import com.soundia.telemetry.model.DjSessionLog;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -29,7 +32,15 @@ public class AiMidiObserver implements MidiObserver{
     )
     @Override
     public void onMidiEvent(DjSessionLog logEvent){
-        ResponseEntity<String> response = restTemplate.postForEntity(pythonAiUrl, logEvent, String.class);
+        // Forzar cabeceras explicitas para deshabilitar el envio por fragmentos (chunked)
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        // Envolver el evento y las cabeceras en un paquete sellado.
+        HttpEntity<DjSessionLog> requestEntity = new HttpEntity<>(logEvent, headers);
+        
+        // Enviar el paquete estructurado.
+        ResponseEntity<String> response = restTemplate.postForEntity(pythonAiUrl, requestEntity, String.class);
         System.out.println("[Motor IA] Transicion calculada por Python: " + response.getBody());
     }
     

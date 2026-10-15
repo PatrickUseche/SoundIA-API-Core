@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 import org.springframework.web.client.RestTemplate;
 import com.soundia.telemetry.dto.AiDecisionDto;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpEntity;
 
 @RestController
 @RequestMapping("/api/v1/midi")
@@ -41,13 +44,17 @@ public class MidiTelemetryController {
     
     @GetMapping("/logs")
     public List<DjSessionLog> getRecentTelemetry(){
-        return logRepository.findTop50ByOrderByCreatedAtDesc();
+        return logRepository.findTop50ByOrderByCreatedInDesc();
     }
     
     @PostMapping("/ai/predict")
     public AiDecisionDto getAiPredictAiDecisionDtoion(@RequestBody DjSessionLogDto eventDto){
         String pythonAiUrl = "http://localhost:8000/api/mix/calculate";
-        // Dispara la peticion hacia Python y mapea la respuesta automaticamente al record.
-        return restTemplate.postForObject(pythonAiUrl, eventDto, AiDecisionDto.class);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<DjSessionLogDto> requestEntity = new HttpEntity<>(eventDto, headers);
+        
+        return restTemplate.postForObject(pythonAiUrl, requestEntity, AiDecisionDto.class);
     }
 }
