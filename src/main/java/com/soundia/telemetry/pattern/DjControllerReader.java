@@ -2,33 +2,24 @@ package com.soundia.telemetry.pattern;
 
 import com.soundia.telemetry.model.DjSessionLog;
 import org.springframework.stereotype.Component;
-import jakarta.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 public class DjControllerReader{
-    private final List<MidiObserver> observers = new ArrayList<>();
-    private final DatabaseMidiObserver databaseMidiObserver;
-    private final AiMidiObserver aiMidiObserver;
+    private final List<MidiObserver> observers = new CopyOnWriteArrayList<>();
 
-    public DjControllerReader(DatabaseMidiObserver databaseMidiObserver, AiMidiObserver aiMidiObserver) {
-        this.databaseMidiObserver = databaseMidiObserver;
-        this.aiMidiObserver = aiMidiObserver;
+    // Spring entrega todos los MidiObserver registrados como beans: un observador nuevo
+    // (por ejemplo WebSockets) se suscribe solo con ser un @Component, sin tocar esta clase.
+    public DjControllerReader(List<MidiObserver> registeredObservers) {
+        this.observers.addAll(registeredObservers);
     }
-    
-    @PostConstruct
-    public void init(){
-        // Vincula el observador de BD al Sujeto en el momento en que Spring Boot arranca.
-        this.attach(databaseMidiObserver);
-        this.attach(aiMidiObserver);
-    }
-    
+
     public void attach(MidiObserver observer){
         this.observers.add(observer);
     }
     
-    // Se ejecuta asincronamente cuando el hardware envia una senal MIDI.
+    // Se ejecuta cuando el hardware envia una senal MIDI; cada observador decide si es asincrono.
     public void notifyObservers(DjSessionLog logEvent){
         for(MidiObserver observer : observers){
             observer.onMidiEvent(logEvent);
