@@ -62,4 +62,31 @@ class EnvironmentVariablesBindingTests {
         assertEquals("http://localhost:8000", props.baseUrl());
         assertEquals(Duration.ofSeconds(120), props.analysisTimeout());
     }
+
+    /** Las propiedades que se leen con @Value se resuelven con guiones bajos (kebab-case -> SNAKE_CASE). */
+    private String propiedad(String nombre, Map<String, Object> entorno) {
+        StandardEnvironment env = new StandardEnvironment();
+        env.getPropertySources().addFirst(new SystemEnvironmentPropertySource("sistema", entorno));
+        return env.getProperty(nombre);
+    }
+
+    @Test
+    void losOrigenesCorsSeConfiguranConSOUNDIA_CORS_ALLOWED_ORIGINS() {
+        assertEquals("http://localhost:4200,https://dj.soundia.app",
+                propiedad("soundia.cors.allowed-origins",
+                        Map.of("SOUNDIA_CORS_ALLOWED_ORIGINS", "http://localhost:4200,https://dj.soundia.app")));
+    }
+
+    @Test
+    void laConexionSseSeConfiguraConSOUNDIA_STREAM_TIMEOUT_Y_HEARTBEAT() {
+        assertEquals("10m", propiedad("soundia.stream.timeout", Map.of("SOUNDIA_STREAM_TIMEOUT", "10m")));
+        assertEquals("5s", propiedad("soundia.stream.heartbeat", Map.of("SOUNDIA_STREAM_HEARTBEAT", "5s")));
+    }
+
+    @Test
+    void laBaseDeDatosSeConfiguraConDB_URL_DB_USERNAME_Y_DB_PASSWORD() {
+        assertEquals("secreto", propiedad("DB_PASSWORD", Map.of("DB_PASSWORD", "secreto")));
+        assertEquals("jdbc:postgresql://db:5432/soundia_db",
+                propiedad("DB_URL", Map.of("DB_URL", "jdbc:postgresql://db:5432/soundia_db")));
+    }
 }
