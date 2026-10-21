@@ -58,8 +58,17 @@ class TrackProxyIntegrationTests {
         registry.add("soundia.ia-engine.base-url", () -> "http://localhost:" + django.getAddress().getPort());
     }
 
+    private static final byte[] AUDIO = {'R', 'I', 'F', 'F', 10, 20, 30, 40, 50};
+
     private static void responder(HttpExchange exchange) throws IOException {
         cuerpoRecibido.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.ISO_8859_1));
+        if (exchange.getRequestURI().getPath().endsWith("/file") && status == 200) {
+            exchange.getResponseHeaders().add("Content-Type", "audio/wav");
+            exchange.sendResponseHeaders(200, AUDIO.length);
+            exchange.getResponseBody().write(AUDIO);
+            exchange.close();
+            return;
+        }
         byte[] body = respuesta.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
         exchange.sendResponseHeaders(status, body.length);
@@ -127,5 +136,27 @@ class TrackProxyIntegrationTests {
         mockMvc.perform(get("/api/v1/tracks"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.error").value("El motor de IA no esta disponible"));
+    }
+
+    @Test
+    void elAudioDeUnaPistaViajaDeDjangoAlClienteSinAlterarse() throws Exception {
+        status = 200;
+
+        byte[] recibido = mockMvc.perform(get("/api/v1/tracks/5/audio"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType("audio/wav"))
+                .andReturn().getResponse().getContentAsByteArray();
+
+        org.junit.jupiter.api.Assertions.assertArrayEquals(AUDIO, recibido);
+    }
+
+    @Test
+    void unaPistaSinAudioEnDjangoLlegaComo404ConSuMensaje() throws Exception {
+        status = 404;
+        respuesta = "{\"error\":\"La pista no tiene audio guardado.\"}";
+
+        mockMvc.perform(get("/api/v1/tracks/5/audio"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("La pista no tiene audio guardado."));
     }
 }
