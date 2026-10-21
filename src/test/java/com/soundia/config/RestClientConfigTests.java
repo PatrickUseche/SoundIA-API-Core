@@ -62,7 +62,22 @@ class RestClientConfigTests {
             assertEquals("http://localhost:8000/api/mix/calculate", props.mixCalculateUrl());
             assertEquals(Duration.ofSeconds(2), props.connectTimeout());
             assertEquals(Duration.ofSeconds(5), props.readTimeout());
+            assertEquals(Duration.ofSeconds(120), props.analysisTimeout());
         });
+    }
+
+    @Test
+    void construyeLaUrlDeLosEndpointsDeAudio() {
+        contextRunner.withPropertyValues("soundia.ia-engine.base-url=http://ia.interno:9000/")
+                .run(context -> assertEquals("http://ia.interno:9000/api/audio/analyze",
+                        context.getBean(IaEngineProperties.class).audioUrl("analyze")));
+    }
+
+    @Test
+    void elTimeoutDeAnalisisSeConfiguraPorPropiedad() {
+        contextRunner.withPropertyValues("soundia.ia-engine.analysis-timeout=45s")
+                .run(context -> assertEquals(Duration.ofSeconds(45),
+                        context.getBean(IaEngineProperties.class).analysisTimeout()));
     }
 
     @Test
@@ -75,7 +90,7 @@ class RestClientConfigTests {
     @Test
     void respondeNormalmenteSiElServidorEsRapido() {
         RestTemplate restTemplate = new RestClientConfig().iaEngineRestTemplate(
-                new IaEngineProperties("http://localhost", Duration.ofSeconds(1), Duration.ofSeconds(1)));
+                new IaEngineProperties("http://localhost", Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(60)));
 
         assertEquals("ok", restTemplate.getForObject(url("/rapido"), String.class));
     }
@@ -83,7 +98,7 @@ class RestClientConfigTests {
     @Test
     void cortaLaPeticionCuandoSuperaElTimeoutDeLectura() {
         RestTemplate restTemplate = new RestClientConfig().iaEngineRestTemplate(
-                new IaEngineProperties("http://localhost", Duration.ofMillis(300), Duration.ofMillis(300)));
+                new IaEngineProperties("http://localhost", Duration.ofMillis(300), Duration.ofMillis(300), Duration.ofSeconds(60)));
 
         long inicio = System.nanoTime();
         assertThrows(ResourceAccessException.class,
@@ -91,5 +106,24 @@ class RestClientConfigTests {
 
         long ms = Duration.ofNanos(System.nanoTime() - inicio).toMillis();
         assertTrue(ms < 1400, "debio cortar antes de que responda el servidor lento, tardo " + ms + " ms");
+    }
+
+    @Test
+    void elRestTemplateDeAnalisisAguantaUnServidorLentoQueElNormalCorta() {
+        IaEngineProperties props = new IaEngineProperties(
+                "http://localhost", Duration.ofSeconds(1), Duration.ofMillis(300), Duration.ofSeconds(5));
+        RestClientConfig config = new RestClientConfig();
+
+        assertThrows(ResourceAccessException.class,
+                () -> config.iaEngineRestTemplate(props).getForObject(url("/lento"), String.class));
+        // El servidor lento cierra sin responder: con mas tiempo ya no es un timeout sino otro tipo de fallo.
+        long inicio = System.nanoTime();
+        try {
+            config.iaEngineAnalysisRestTemplate(props).getForObject(url("/lento"), String.class);
+        } catch (RuntimeException esperado) {
+            // da igual el tipo; lo importante es cuanto espero antes de rendirse
+        }
+        long ms = Duration.ofNanos(System.nanoTime() - inicio).toMillis();
+        assertTrue(ms >= 1200, "el RestTemplate de analisis debio esperar la respuesta del servidor lento, espero " + ms + " ms");
     }
 }
