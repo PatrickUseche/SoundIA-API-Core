@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Si se sube otro commit a la misma rama, se cancela la ejecucion anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Compilar y probar (Java 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # El wrapper se versiono sin permiso de ejecucion (se creo desde Windows).
+      - name: Dar permiso de ejecucion a mvnw
+        run: chmod +x ./mvnw
+
+      # Las pruebas usan H2 en memoria: no hace falta PostgreSQL ni DB_PASSWORD.
+      - name: Compilar y ejecutar las pruebas
+        run: ./mvnw -B verify
