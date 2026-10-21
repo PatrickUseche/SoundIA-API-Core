@@ -3,6 +3,7 @@ package com.soundia.telemetry.service;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.soundia.session.service.DjSessionService;
 import com.soundia.telemetry.dto.AiDecisionDto;
 import com.soundia.telemetry.model.DjSessionLog;
 import com.soundia.telemetry.repository.DjSessionLogRepository;
@@ -19,12 +20,14 @@ public class MidiEventService {
     private final IaEngineClient iaEngine;
     private final DjSessionLogRepository repository;
     private final ApplicationEventPublisher events;
+    private final DjSessionService sessions;
 
     public MidiEventService(IaEngineClient iaEngine, DjSessionLogRepository repository,
-                            ApplicationEventPublisher events) {
+                            ApplicationEventPublisher events, DjSessionService sessions) {
         this.iaEngine = iaEngine;
         this.repository = repository;
         this.events = events;
+        this.sessions = sessions;
     }
 
     /**
@@ -33,14 +36,20 @@ public class MidiEventService {
      */
     public AiDecisionDto decideAndStore(Integer controlId, Integer value) {
         AiDecisionDto decision = iaEngine.calculateMix(controlId, value);
-        DjSessionLog saved = repository.save(new DjSessionLog(controlId, value, decision.action()));
+        DjSessionLog saved = repository.save(inCurrentSession(new DjSessionLog(controlId, value, decision.action())));
         events.publishEvent(new MidiDecisionEvent(saved, decision.status()));
         return decision;
     }
 
+    /** Asocia el registro a la sesion de DJ abierta, si la hay. */
+    private DjSessionLog inCurrentSession(DjSessionLog log) {
+        log.setSessionId(sessions.activeSessionId());
+        return log;
+    }
+
     /** Guarda el evento sin decision cuando el motor de IA no esta disponible. */
     public void storeWithoutDecision(Integer controlId, Integer value) {
-        DjSessionLog saved = repository.save(new DjSessionLog(controlId, value));
+        DjSessionLog saved = repository.save(inCurrentSession(new DjSessionLog(controlId, value)));
         events.publishEvent(new MidiDecisionEvent(saved, DecisionMessage.UNAVAILABLE));
     }
 }
