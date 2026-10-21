@@ -17,6 +17,10 @@ public class DjSessionLog {
     @Column(name = "value", nullable = false)
     private Integer value;
 
+    // Decision de la IA para este evento. Es null si el motor de IA no estuvo disponible.
+    @Column(name = "action")
+    private String action;
+
     @Column(name = "created_in", updatable = false)
     private LocalDateTime createdIn;
 
@@ -31,6 +35,11 @@ public class DjSessionLog {
     public DjSessionLog(Integer controlId, Integer value) {
         this.controlId = controlId;
         this.value = value;
+    }
+
+    public DjSessionLog(Integer controlId, Integer value, String action) {
+        this(controlId, value);
+        this.action = action;
     }
 
     public Long getId() {
@@ -55,6 +64,14 @@ public class DjSessionLog {
 
     public void setValue(Integer value) {
         this.value = value;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public LocalDateTime getCreatedIn() {
