@@ -22,7 +22,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 ## Fase 3 — Sesiones y biblioteca de pistas
 
-- [ ] feat(session): entidad DjSession para agrupar eventos por sesión [3.1]
+- [x] feat(session): entidad DjSession para agrupar eventos por sesión [3.1]
 - [ ] feat(tracks): entidad Track y CRUD con BPM, tonalidad y energía [3.2]
 - [ ] feat(tracks): endpoint de subida de audio y reenvío al motor de análisis [3.3]
 

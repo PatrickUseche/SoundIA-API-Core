@@ -45,8 +45,23 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `GET` | `/logs` | Últimos 50 eventos guardados (incluye `action`, `null` si la IA no estuvo disponible). |
 | `GET` | `/stream` | Flujo SSE en vivo (ver abajo). |
 
+### Sesiones (`/api/v1/sessions`)
+
+Una sesión agrupa los eventos MIDI desde que el DJ la inicia hasta que la cierra. **Solo puede haber una abierta a la vez**
+(iniciar otra devuelve 409). Cada evento procesado se asocia a la sesión abierta *en el momento de guardarse*; sin sesión
+abierta se guarda igual, con `sessionId` nulo.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/` | `{name}` (obligatorio, máx. 100). Inicia una sesión: 201 con `Location`; 409 si ya hay una abierta. |
+| `GET` | `/` | Las 20 sesiones más recientes. |
+| `GET` | `/active` | La sesión abierta; 404 si no hay. |
+| `GET` | `/{id}` | Una sesión; 404 si no existe. |
+| `GET` | `/{id}/logs` | Eventos de la sesión, del más antiguo al más reciente (máx. 500). |
+| `POST` | `/{id}/end` | Cierra la sesión; 409 si ya estaba cerrada. |
+
 `controlId` debe ser ≥ 0 y `value` estar entre 0 y 127. Los errores devuelven `{ "error": "...", "detalles": [...] }`
-con 400 (validación), 502 (motor de IA caído) o 500.
+con 400 (validación o petición mal formada), 404, 405, 409 (conflicto), 415, 502 (motor de IA caído) o 500.
 
 ### Flujo en vivo (SSE)
 
