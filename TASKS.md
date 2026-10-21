@@ -30,6 +30,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 - [x] feat(autodj): endpoint que pide al motor la siguiente pista y la transición [4.1]
 - [x] feat(autodj): cola de reproducción por sesión [4.2]
+- [x] feat(autodj): valoración de transiciones (me gustó / no me gustó) reenviada al motor, que aprende sus pesos [4.3]
 
 ## Fase 5 — Despliegue y seguridad
 

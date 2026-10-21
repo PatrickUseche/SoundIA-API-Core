@@ -89,6 +89,9 @@ La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el moto
 | `POST` | `/api/v1/autodj/next` | `{trackId, limit?}` (límite 1-20). Pistas que mejor siguen a la indicada, con su puntuación de compatibilidad (tempo, armonía, energía). |
 | `POST` | `/api/v1/autodj/transition` | `{fromTrackId, toTrackId}`. Plan de transición: estilo (`blend`/`cut`), compases, segundo de salida y de entrada, y curvas de crossfader/EQ por pulso. |
 
+| `POST` | `/api/v1/autodj/feedback` | `{fromTrackId, toTrackId, liked}` (`liked` debe ser `true`/`false`). El DJ valora una transición: el motor la guarda y reajusta cuánto pesan tempo, armonía y energía. 201 con `{weights, samples, learned}`. |
+| `GET` | `/api/v1/autodj/weights` | Los pesos de la puntuación vigentes, si son aprendidos y con cuántas valoraciones. |
+
 **Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Orden FIFO; máximo 100 pistas; solo en sesiones abiertas.
 
 | Método | Ruta | Descripción |
