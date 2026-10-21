@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.http.ResponseEntity;
 
 @WebMvcTest(TrackController.class)
 class TrackControllerTests {
@@ -150,5 +151,38 @@ class TrackControllerTests {
         mockMvc.perform(multipart("/api/v1/tracks/analyze").file(audio("enorme.wav", new byte[] {1})))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.error").value("El archivo supera el tamano maximo permitido"));
+    }
+
+    @Test
+    void devuelveElAudioDeUnaPistaConSuTipoYLongitud() throws Exception {
+        byte[] audio = {1, 2, 3, 4, 5};
+        when(tracks.getTrackAudio(4)).thenReturn(
+                ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(audio));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("audio/wav"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Length", "5"))
+                .andExpect(content().bytes(audio));
+    }
+
+    @Test
+    void sinTipoDeContenidoDelMotorUsaOctetStream() throws Exception {
+        when(tracks.getTrackAudio(4)).thenReturn(ResponseEntity.ok().body(new byte[] {9}));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM));
+    }
+
+    @Test
+    void unaPistaSinAudioDevuelve404ConElMensajeDelMotor() throws Exception {
+        when(tracks.getTrackAudio(4)).thenThrow(HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", new org.springframework.http.HttpHeaders(),
+                "{\"error\":\"La pista no tiene audio guardado.\"}".getBytes(), java.nio.charset.StandardCharsets.UTF_8));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("La pista no tiene audio guardado."));
     }
 }

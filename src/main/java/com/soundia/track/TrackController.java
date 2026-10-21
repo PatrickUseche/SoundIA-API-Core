@@ -48,4 +48,14 @@ public class TrackController {
     public ResponseEntity<String> get(@PathVariable long id) {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(tracks.getTrack(id));
     }
+
+    /** El audio original de la pista, para decodificarlo y reproducirlo en un deck del navegador. */
+    @GetMapping("/{id}/audio")
+    public ResponseEntity<byte[]> audio(@PathVariable long id) {
+        ResponseEntity<byte[]> upstream = tracks.getTrackAudio(id);
+        byte[] body = upstream.getBody() != null ? upstream.getBody() : new byte[0];
+        MediaType type = upstream.getHeaders().getContentType() != null
+                ? upstream.getHeaders().getContentType() : MediaType.APPLICATION_OCTET_STREAM;
+        return ResponseEntity.ok().contentType(type).contentLength(body.length).body(body);
+    }
 }
