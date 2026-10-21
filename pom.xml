@@ -11,66 +11,72 @@
 	<groupId>com.soundia</groupId>
 	<artifactId>soundia</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>soundia</name>
+	<description>API Gateway de SoundIA: telemetria MIDI de DJ y conexion con el motor de IA</description>
 	<properties>
 		<java.version>25</java.version>
-                                   <start-class>com.soundia.SoundiaApplication</start-class>
+		<start-class>com.soundia.SoundiaApplication</start-class>
 	</properties>
 	<dependencies>
+		<!-- Web y persistencia -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Reintentos hacia el motor de IA (@Retryable); requieren AOP -->
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
+			<!-- Spring Boot 4 ya no gestiona esta version -->
+			<version>2.0.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
+		</dependency>
+
+		<!-- Pruebas -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-                                   <dependency>
-                                                     <groupId>org.springframework.boot</groupId>
-                                                     <artifactId>spring-boot-starter-web</artifactId>
-                                   </dependency>
-                                   <dependency>
-                                                     <groupId>org.springframework.retry</groupId>
-                                                     <artifactId>spring-retry</artifactId>
-                                                     <version>2.0.6</version>
-                                    </dependency>
-                                   <dependency>
-                                                     <groupId>org.springframework.boot</groupId>
-                                                     <artifactId>spring-boot-starter-aop</artifactId>
-                                                     <version>3.2.0</version>
-                                   </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-                                                              <groupId>org.apache.maven.plugins</groupId>
-                                                              <artifactId>maven-surefire-plugin</artifactId>
-                                                              <configuration>
-                                                                      <argLine>-XX:+EnableDynamicAgentLoading</argLine>
-                                                              </configuration>
-                                                    </plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!-- Mockito carga su agente en caliente; sin esto la JVM 25 lo advierte o lo bloquea -->
+					<argLine>-XX:+EnableDynamicAgentLoading</argLine>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

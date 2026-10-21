@@ -1,6 +1,8 @@
 package com.soundia.telemetry.controller;
 
 import com.soundia.telemetry.pattern.DjControllerReader;
+import com.soundia.telemetry.service.MidiEventService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.soundia.telemetry.model.DjSessionLog;
@@ -8,35 +10,32 @@ import com.soundia.telemetry.dto.DjSessionLogDto;
 import com.soundia.telemetry.repository.DjSessionLogRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
-import org.springframework.web.client.RestTemplate;
 import com.soundia.telemetry.dto.AiDecisionDto;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpEntity;
 
 @RestController
 @RequestMapping("/api/v1/midi")
 public class MidiTelemetryController {
     private final DjControllerReader reader;
     private final DjSessionLogRepository logRepository;
-    private final RestTemplate restTemplate;
+    private final MidiEventService midiEventService;
     
-    // Inyeccion de dependencias. Spring arrastra el Sujeto que ya tiene atado el DatabaseMidiObserver
-    public MidiTelemetryController(DjControllerReader reader, DjSessionLogRepository logRepository) {
+    // Inyeccion de dependencias. Spring arrastra el Sujeto con sus observadores ya suscritos.
+    public MidiTelemetryController(DjControllerReader reader, DjSessionLogRepository logRepository,
+                                   MidiEventService midiEventService) {
         this.reader = reader;
         this.logRepository = logRepository;
-        this.restTemplate = new RestTemplate();
+        this.midiEventService = midiEventService;
     }
     
     // El hardware envie el JSON aqui. @RequestBody lo transforma automaticamente a una entidad Java.
     @PostMapping("/event")
-    public ResponseEntity<String> receiveMidiEvent(@RequestBody DjSessionLogDto dto){
+    public ResponseEntity<String> receiveMidiEvent(@Valid @RequestBody DjSessionLogDto dto){
         // Mapeo manual: Transferimos datos DTO seguro a la Entidad de BD.
         DjSessionLog logEvent = new DjSessionLog();
         logEvent.setControlId(dto.controlId());
         logEvent.setValue(dto.value());
         
-        // El evento ya validado ingresa a la linea de ensamblaje (BD e IA asincronos)
+        // El evento ya validado se procesa de forma asincrona (IA + guardado en BD).
         reader.notifyObservers(logEvent);
         
         return ResponseEntity.ok("Evento MIDI procesado.");
@@ -47,14 +46,9 @@ public class MidiTelemetryController {
         return logRepository.findTop50ByOrderByCreatedInDesc();
     }
     
+    // Version sincrona del mismo flujo: calcula la decision, la guarda y la devuelve al cliente.
     @PostMapping("/ai/predict")
-    public AiDecisionDto getAiPredictAiDecisionDtoion(@RequestBody DjSessionLogDto eventDto){
-        String pythonAiUrl = "http://localhost:8000/api/mix/calculate";
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<DjSessionLogDto> requestEntity = new HttpEntity<>(eventDto, headers);
-        
-        return restTemplate.postForObject(pythonAiUrl, requestEntity, AiDecisionDto.class);
+    public AiDecisionDto predict(@Valid @RequestBody DjSessionLogDto eventDto){
+        return midiEventService.decideAndStore(eventDto.controlId(), eventDto.value());
     }
 }
