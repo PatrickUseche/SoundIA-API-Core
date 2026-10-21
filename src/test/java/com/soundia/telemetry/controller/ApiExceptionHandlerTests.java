@@ -70,6 +70,27 @@ class ApiExceptionHandlerTests {
     }
 
     @Test
+    void unaRutaInexistenteDevuelve404ConElCuerpoUniforme() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/no-existe"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Recurso no encontrado"));
+    }
+
+    @Test
+    void unMetodoHttpNoPermitidoDevuelve405() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/midi/ai/predict"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.error").value("Metodo no permitido"));
+    }
+
+    @Test
+    void unTipoDeContenidoNoSoportadoDevuelve415() throws Exception {
+        mockMvc.perform(post("/api/v1/midi/event").contentType(MediaType.TEXT_PLAIN).content("hola"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.error").value("Tipo de contenido no soportado"));
+    }
+
+    @Test
     void errorInesperadoDevuelve500SinFiltrarElMensaje() throws Exception {
         when(midiEventService.decideAndStore(14, 127)).thenThrow(new IllegalStateException("clave secreta en el mensaje"));
 

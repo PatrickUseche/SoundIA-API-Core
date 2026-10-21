@@ -4,29 +4,65 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
  * Manejo centralizado de errores. Al cliente solo se le devuelven mensajes genericos; el detalle
  * tecnico (URLs internas, trazas) queda unicamente en los logs del servidor.
+ *
+ * Extiende ResponseEntityExceptionHandler para que las excepciones propias de Spring MVC (ruta
+ * inexistente, metodo no permitido, tipo de contenido no soportado, parametro mal formado...) conserven
+ * su codigo HTTP correcto en lugar de caer en el 500 generico.
  */
 @RestControllerAdvice
-public class ApiExceptionHandler {
+public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<String> detalles = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .toList();
         return ResponseEntity.badRequest().body(new ErrorResponse("Validacion fallida", detalles));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException e,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        log.warn("Cuerpo de peticion ilegible: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of("El cuerpo de la peticion no es un JSON valido"));
+    }
+
+    /** Resto de excepciones estandar de Spring MVC: se conserva su codigo con un cuerpo uniforme. */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception e, @Nullable Object body,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return ResponseEntity.status(status).headers(headers).body(ErrorResponse.of(messageFor(status)));
+    }
+
+    private static String messageFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 400 -> "Peticion invalida";
+            case 404 -> "Recurso no encontrado";
+            case 405 -> "Metodo no permitido";
+            case 406 -> "Formato de respuesta no soportado";
+            case 415 -> "Tipo de contenido no soportado";
+            default -> status.is4xxClientError() ? "Peticion invalida" : "Error interno del servidor";
+        };
     }
 
     // Estos mensajes los escribe la propia aplicacion para el usuario, por eso se devuelven tal cual.
@@ -38,13 +74,6 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e.getMessage()));
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
-        log.warn("Cuerpo de peticion ilegible: {}", e.getMessage());
-        return ResponseEntity.badRequest()
-                .body(ErrorResponse.of("El cuerpo de la peticion no es un JSON valido"));
     }
 
     @ExceptionHandler(RestClientException.class)
