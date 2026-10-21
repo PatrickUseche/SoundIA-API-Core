@@ -15,6 +15,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -57,6 +59,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(ErrorResponse.of("El cuerpo de la peticion no es un JSON valido"));
     }
 
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException e,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of("Falta el campo '" + e.getRequestPartName() + "' en la peticion"));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+                .body(ErrorResponse.of("El archivo supera el tamano maximo permitido"));
+    }
+
     /** Resto de excepciones estandar de Spring MVC: se conserva su codigo con un cuerpo uniforme. */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception e, @Nullable Object body,
@@ -68,6 +84,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return switch (status.value()) {
             case 400 -> "Peticion invalida";
             case 404 -> "Recurso no encontrado";
+            case 413 -> "El archivo supera el tamano maximo permitido";
             case 405 -> "Metodo no permitido";
             case 406 -> "Formato de respuesta no soportado";
             case 415 -> "Tipo de contenido no soportado";
@@ -79,6 +96,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e.getMessage()));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException e) {
+        return ResponseEntity.badRequest().body(ErrorResponse.of(e.getMessage()));
     }
 
     @ExceptionHandler(ConflictException.class)
