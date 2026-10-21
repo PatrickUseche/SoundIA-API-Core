@@ -30,6 +30,23 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `soundia.stream.timeout` | `30m` | Duración máxima de una conexión SSE |
 | `soundia.stream.heartbeat` | `15s` | Intervalo del latido `keep-alive` |
 
+## Con Docker
+
+`docker-compose.yml` levanta PostgreSQL, el motor de IA, este API y el frontend juntos. Necesita los tres repositorios
+clonados uno junto a otro y un `.env` con `DB_PASSWORD` y `DJANGO_SECRET_KEY`:
+
+```bash
+cp .env.example .env     # y edita las contraseñas
+docker compose up --build
+```
+
+Frontend en http://localhost:4200 y API en http://localhost:8080. La base de datos y los audios guardados viven en
+volúmenes (`db-data`, `ia-data`).
+
+> ⚠️ **Los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
+> Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno
+> (`SOUNDIA_IA_ENGINE_BASE_URL`, `SOUNDIA_CORS_ALLOWED_ORIGINS`, `DB_*`). Si algo falla al construir, empezar por las imágenes base.
+
 ## Ejecutar y probar
 
 ```bash
