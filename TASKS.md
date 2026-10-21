@@ -16,9 +16,9 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 ## Fase 2 — Tiempo real
 
-- [ ] feat(stream): endpoint SSE o WebSocket que emita eventos MIDI y decisiones de la IA [2.1]
-- [ ] feat(observer): nuevo observador que publique cada evento al canal en vivo [2.2]
-- [ ] feat(cors): configurar origen del frontend por propiedad según perfil [2.3]
+- [x] feat(stream): endpoint SSE (GET /api/v1/midi/stream) que emite eventos MIDI y decisiones de la IA [2.1]
+- [x] feat(observer): observador que publica cada evento MIDI y cada decisión al canal en vivo [2.2]
+- [x] feat(cors): configurar los orígenes permitidos por propiedad [2.3]
 
 ## Fase 3 — Sesiones y biblioteca de pistas
 
