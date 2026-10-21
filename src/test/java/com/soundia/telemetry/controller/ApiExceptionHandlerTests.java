@@ -16,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import com.soundia.telemetry.pattern.DjControllerReader;
@@ -98,5 +100,54 @@ class ApiExceptionHandlerTests {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Error interno del servidor"))
                 .andExpect(content().string(not(containsString("secreta"))));
+    }
+
+    private HttpClientErrorException errorDeDjango(HttpStatus status, String cuerpo) {
+        return HttpClientErrorException.create(
+                status, status.getReasonPhrase(), new org.springframework.http.HttpHeaders(),
+                cuerpo.getBytes(java.nio.charset.StandardCharsets.UTF_8), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void unErrorDeClienteDeDjangoConservaSuCodigoYSuMensaje() throws Exception {
+        when(midiEventService.decideAndStore(14, 127)).thenThrow(
+                errorDeDjango(HttpStatus.UNPROCESSABLE_ENTITY, "{\"error\":\"El audio es silencio; no hay nada que analizar.\"}"));
+
+        enviar("/api/v1/midi/ai/predict", "{\"controlId\":14,\"value\":127}")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error").value("El audio es silencio; no hay nada que analizar."));
+    }
+
+    @Test
+    void unNotFoundDeDjangoSePasaTalCual() throws Exception {
+        when(midiEventService.decideAndStore(14, 127))
+                .thenThrow(errorDeDjango(HttpStatus.NOT_FOUND, "{\"error\":\"Pista no encontrada\"}"));
+
+        enviar("/api/v1/midi/ai/predict", "{\"controlId\":14,\"value\":127}")
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Pista no encontrada"));
+    }
+
+    @Test
+    void siElCuerpoDeDjangoNoEsJsonUsaUnMensajeGenerico() throws Exception {
+        when(midiEventService.decideAndStore(14, 127))
+                .thenThrow(errorDeDjango(HttpStatus.BAD_REQUEST, "<html>Bad Request</html>"));
+
+        enviar("/api/v1/midi/ai/predict", "{\"controlId\":14,\"value\":127}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El motor de IA rechazo la peticion"))
+                .andExpect(content().string(not(containsString("html"))));
+    }
+
+    @Test
+    void unCodigoDeClienteInesperadoDeDjangoSeTrataComoMotorNoDisponible() throws Exception {
+        // Un 401/403 de Django no es un error del usuario sino de configuracion entre servicios.
+        when(midiEventService.decideAndStore(14, 127))
+                .thenThrow(errorDeDjango(HttpStatus.UNAUTHORIZED, "{\"error\":\"clave interna\"}"));
+
+        enviar("/api/v1/midi/ai/predict", "{\"controlId\":14,\"value\":127}")
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.error").value("El motor de IA no esta disponible"))
+                .andExpect(content().string(not(containsString("clave interna"))));
     }
 }
