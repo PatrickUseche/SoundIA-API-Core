@@ -11,7 +11,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [x] refactor(config): mover credenciales de PostgreSQL a variables de entorno [1.4]
 - [x] refactor(config): bean de RestTemplate con timeouts y URL de Django configurable [1.5]
 - [x] feat(errors): manejo global de errores con @ControllerAdvice [1.6]
-- [ ] test(telemetry): pruebas unitarias de observers y controlador, y contextLoads sin PostgreSQL real [1.7]
+- [x] test(telemetry): pruebas unitarias de observers y controlador, y contextLoads sin PostgreSQL real [1.7]
 - [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway [1.8]
 - [ ] chore: limpiar pom.xml (metadatos vacíos e indentación) [1.9]
 
