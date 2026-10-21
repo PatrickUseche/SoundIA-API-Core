@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -50,6 +51,14 @@ public class TrackClient {
 
     public String getTrack(long id) {
         return restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class);
+    }
+
+    /**
+     * El audio original de una pista. Se descarga entero (hasta 50 MB) con el RestTemplate de analisis,
+     * que tiene un timeout de lectura largo.
+     */
+    public ResponseEntity<byte[]> getTrackAudio(long id) {
+        return analysisRestTemplate.getForEntity(properties.audioUrl("tracks/" + id + "/file"), byte[].class);
     }
 
     /** Un ByteArrayResource con nombre de archivo, que es lo que hace falta para enviarlo como parte multipart. */

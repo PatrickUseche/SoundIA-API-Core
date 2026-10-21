@@ -34,6 +34,8 @@ class TrackClientTests {
     private final AtomicReference<String> cuerpo = new AtomicReference<>();
     private volatile int status = 200;
     private volatile String respuesta = PISTA;
+    private volatile byte[] audioDeRespuesta = null;
+    private volatile String tipoDeAudio = "application/json";
 
     @BeforeEach
     void startServer() throws IOException {
@@ -49,8 +51,8 @@ class TrackClientTests {
     }
 
     private void responder(HttpExchange exchange) throws IOException {
-        byte[] body = respuesta.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        byte[] body = audioDeRespuesta != null ? audioDeRespuesta : respuesta.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", audioDeRespuesta != null ? tipoDeAudio : "application/json");
         exchange.sendResponseHeaders(status, body.length);
         exchange.getResponseBody().write(body);
         exchange.close();
@@ -139,5 +141,29 @@ class TrackClientTests {
         respuesta = "{\"error\":\"boom\"}";
 
         assertThrows(RestClientException.class, () -> client().listTracks());
+    }
+
+    @Test
+    void descargaElAudioDeUnaPistaConSuTipoDeContenido() {
+        byte[] audio = {'R', 'I', 'F', 'F', 1, 2, 3};
+        audioDeRespuesta = audio;
+        tipoDeAudio = "audio/wav";
+
+        var respuesta = client().getTrackAudio(7);
+
+        assertEquals(200, respuesta.getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertArrayEquals(audio, respuesta.getBody());
+        assertEquals("audio/wav", respuesta.getHeaders().getContentType().toString());
+        assertEquals("/api/audio/tracks/7/file", ruta.get());
+    }
+
+    @Test
+    void siLaPistaNoTieneAudioSePropagaElError404() {
+        status = 404;
+        respuesta = "{\"error\":\"La pista no tiene audio guardado.\"}";
+
+        HttpClientErrorException error = assertThrows(HttpClientErrorException.class, () -> client().getTrackAudio(7));
+
+        assertEquals(404, error.getStatusCode().value());
     }
 }
