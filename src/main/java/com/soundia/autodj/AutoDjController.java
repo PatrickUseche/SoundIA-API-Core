@@ -1,12 +1,15 @@
 package com.soundia.autodj;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.soundia.autodj.dto.FeedbackRequest;
 import com.soundia.autodj.dto.NextTracksRequest;
 import com.soundia.autodj.dto.TransitionRequest;
 import com.soundia.config.BadRequestException;
@@ -37,6 +40,25 @@ public class AutoDjController {
             throw new BadRequestException("No se puede hacer una transicion de una pista a si misma.");
         }
         return json(autoDj.transition(request.fromTrackId(), request.toTrackId()));
+    }
+
+    /**
+     * El DJ valora una transicion (me gusto / no me gusto). El motor guarda la valoracion y reajusta cuanto
+     * pesan tempo, armonia y energia en sus recomendaciones. Devuelve los pesos vigentes.
+     */
+    @PostMapping("/feedback")
+    public ResponseEntity<String> feedback(@Valid @RequestBody FeedbackRequest request) {
+        if (request.fromTrackId().equals(request.toTrackId())) {
+            throw new BadRequestException("No se puede valorar una transicion de una pista a si misma.");
+        }
+        String body = autoDj.submitFeedback(request.fromTrackId(), request.toTrackId(), request.liked());
+        return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(body);
+    }
+
+    /** Los pesos de la puntuacion que usa el motor ahora, si son aprendidos y con cuantas valoraciones. */
+    @GetMapping("/weights")
+    public ResponseEntity<String> weights() {
+        return json(autoDj.weights());
     }
 
     private static ResponseEntity<String> json(String body) {

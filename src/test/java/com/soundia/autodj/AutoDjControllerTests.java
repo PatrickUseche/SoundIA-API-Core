@@ -123,4 +123,71 @@ class AutoDjControllerTests {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.error").value("El motor de IA no esta disponible"));
     }
+
+    @Test
+    void registraLaValoracionYDevuelveLosPesosVigentes() throws Exception {
+        when(autoDj.submitFeedback(1, 2, true)).thenReturn("{\"weights\":{\"tempo\":0.4},\"samples\":3,\"learned\":false}");
+
+        enviar("/api/v1/autodj/feedback", "{\"fromTrackId\":1,\"toTrackId\":2,\"liked\":true}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.samples").value(3))
+                .andExpect(jsonPath("$.learned").value(false));
+
+        verify(autoDj).submitFeedback(1, 2, true);
+    }
+
+    @Test
+    void laValoracionNegativaSeReenviaComoFalse() throws Exception {
+        when(autoDj.submitFeedback(1, 2, false)).thenReturn("{}");
+
+        enviar("/api/v1/autodj/feedback", "{\"fromTrackId\":1,\"toTrackId\":2,\"liked\":false}")
+                .andExpect(status().isCreated());
+
+        verify(autoDj).submitFeedback(1, 2, false);
+    }
+
+    @Test
+    void unaValoracionInvalidaDevuelve400SinLlamarAlMotor() throws Exception {
+        String[] casos = {
+            "{}",
+            "{\"fromTrackId\":1,\"toTrackId\":2}",                       // falta liked
+            "{\"fromTrackId\":1,\"liked\":true}",                          // falta toTrackId
+            "{\"fromTrackId\":0,\"toTrackId\":2,\"liked\":true}",          // id no positivo
+            "{\"fromTrackId\":1,\"toTrackId\":2,\"liked\":\"si\"}",        // liked no es booleano
+        };
+        for (String caso : casos) {
+            enviar("/api/v1/autodj/feedback", caso).andExpect(status().isBadRequest());
+        }
+
+        verify(autoDj, never()).submitFeedback(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void valorarUnaTransicionDeUnaPistaConsigoMismaDevuelve400() throws Exception {
+        enviar("/api/v1/autodj/feedback", "{\"fromTrackId\":5,\"toTrackId\":5,\"liked\":true}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("No se puede valorar una transicion de una pista a si misma."));
+    }
+
+    @Test
+    void unaPistaInexistenteEnLaValoracionDevuelveSu404() throws Exception {
+        when(autoDj.submitFeedback(1, 99, true)).thenThrow(HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", new HttpHeaders(),
+                "{\"error\":\"No existe la pista 99.\"}".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
+
+        enviar("/api/v1/autodj/feedback", "{\"fromTrackId\":1,\"toTrackId\":99,\"liked\":true}")
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("No existe la pista 99."));
+    }
+
+    @Test
+    void consultaLosPesosVigentes() throws Exception {
+        when(autoDj.weights()).thenReturn("{\"weights\":{\"tempo\":0.2,\"harmonic\":0.6,\"energy\":0.2},\"learned\":true,\"samples\":40}");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/autodj/weights"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.learned").value(true))
+                .andExpect(jsonPath("$.weights.harmonic").value(0.6))
+                .andExpect(jsonPath("$.samples").value(40));
+    }
 }
