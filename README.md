@@ -25,6 +25,7 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `DB_PASSWORD` | — (obligatoria) | Contraseña |
 | `soundia.ia-engine.base-url` | `http://localhost:8000` | URL del motor de IA |
 | `soundia.ia-engine.connect-timeout` / `read-timeout` | `2s` / `5s` | Timeouts hacia Django |
+| `soundia.ia-engine.analysis-timeout` | `120s` | Timeout de lectura del análisis de audio |
 | `soundia.cors.allowed-origins` | `http://localhost:4200` | Orígenes permitidos (separados por coma) |
 | `soundia.stream.timeout` | `30m` | Duración máxima de una conexión SSE |
 | `soundia.stream.heartbeat` | `15s` | Intervalo del latido `keep-alive` |
@@ -62,6 +63,21 @@ abierta se guarda igual, con `sessionId` nulo.
 
 `controlId` debe ser ≥ 0 y `value` estar entre 0 y 127. Los errores devuelven `{ "error": "...", "detalles": [...] }`
 con 400 (validación o petición mal formada), 404, 405, 409 (conflicto), 415, 502 (motor de IA caído) o 500.
+
+### Pistas (`/api/v1/tracks`)
+
+Pasarela hacia el motor de IA: **Django es el dueño de los datos de pista** (BPM, tonalidad, energía, puntos de mezcla);
+este API solo reenvía y devuelve el JSON sin tocarlo.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/analyze` | `multipart/form-data` con `file` (WAV, FLAC, OGG o MP3; máx. 50 MB) y `title` opcional. Devuelve 201 con la pista analizada. Analizar tarda unos segundos. |
+| `GET` | `/` | Pistas analizadas (las 50 más recientes). |
+| `GET` | `/{id}` | Una pista. |
+
+Los errores 400, 404, 413 y 422 del motor de IA se devuelven **con su código y su mensaje** (por ejemplo, 422 «El audio es
+silencio»); cualquier otro fallo del motor se muestra como un 502 genérico. El análisis usa un timeout propio
+(`soundia.ia-engine.analysis-timeout`, 120 s por defecto).
 
 ### Flujo en vivo (SSE)
 
