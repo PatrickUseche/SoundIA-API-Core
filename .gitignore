@@ -34,3 +34,6 @@ build/
 
 # NetBeans
 nbactions.xml
+
+# Secretos locales
+.env
