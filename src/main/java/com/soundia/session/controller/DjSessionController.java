@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.soundia.session.dto.SessionResponse;
 import com.soundia.session.dto.StartSessionRequest;
 import com.soundia.session.service.DjSessionService;
+import com.soundia.telemetry.model.DjSessionLog;
+import com.soundia.telemetry.repository.DjSessionLogRepository;
 
 import jakarta.validation.Valid;
 
@@ -22,9 +24,11 @@ import jakarta.validation.Valid;
 public class DjSessionController {
 
     private final DjSessionService sessions;
+    private final DjSessionLogRepository logs;
 
-    public DjSessionController(DjSessionService sessions) {
+    public DjSessionController(DjSessionService sessions, DjSessionLogRepository logs) {
         this.sessions = sessions;
+        this.logs = logs;
     }
 
     @PostMapping
@@ -46,6 +50,13 @@ public class DjSessionController {
     @GetMapping("/{id}")
     public SessionResponse get(@PathVariable Long id) {
         return SessionResponse.from(sessions.get(id));
+    }
+
+    // Eventos MIDI de la sesion, del mas antiguo al mas reciente (maximo 500).
+    @GetMapping("/{id}/logs")
+    public List<DjSessionLog> logs(@PathVariable Long id) {
+        sessions.get(id); // 404 si la sesion no existe
+        return logs.findTop500BySessionIdOrderByCreatedInAscIdAsc(id);
     }
 
     @PostMapping("/{id}/end")

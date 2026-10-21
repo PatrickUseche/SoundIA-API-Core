@@ -22,6 +22,8 @@ import com.soundia.config.ConflictException;
 import com.soundia.config.ResourceNotFoundException;
 import com.soundia.session.model.DjSession;
 import com.soundia.session.service.DjSessionService;
+import com.soundia.telemetry.model.DjSessionLog;
+import com.soundia.telemetry.repository.DjSessionLogRepository;
 
 @WebMvcTest(DjSessionController.class)
 class DjSessionControllerTests {
@@ -33,6 +35,9 @@ class DjSessionControllerTests {
 
     @MockitoBean
     private DjSessionService sessions;
+
+    @MockitoBean
+    private DjSessionLogRepository logs;
 
     private DjSession sesion(long id, String nombre, boolean cerrada) {
         DjSession sesion = new DjSession(nombre, INICIO);
@@ -145,5 +150,26 @@ class DjSessionControllerTests {
     @Test
     void unIdQueNoEsNumericoDevuelve400() throws Exception {
         mockMvc.perform(get("/api/v1/sessions/abc")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void devuelveLosEventosDeUnaSesion() throws Exception {
+        when(sessions.get(5L)).thenReturn(sesion(5, "Sabado", true));
+        when(logs.findTop500BySessionIdOrderByCreatedInAscIdAsc(5L))
+                .thenReturn(List.of(new DjSessionLog(14, 127, "Corte de EQ"), new DjSessionLog(15, 64)));
+
+        mockMvc.perform(get("/api/v1/sessions/5/logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].controlId").value(14))
+                .andExpect(jsonPath("$[0].action").value("Corte de EQ"))
+                .andExpect(jsonPath("$[1].action").doesNotExist());
+    }
+
+    @Test
+    void losEventosDeUnaSesionInexistenteDan404() throws Exception {
+        when(sessions.get(9L)).thenThrow(new ResourceNotFoundException("No existe la sesion 9."));
+
+        mockMvc.perform(get("/api/v1/sessions/9/logs")).andExpect(status().isNotFound());
     }
 }
