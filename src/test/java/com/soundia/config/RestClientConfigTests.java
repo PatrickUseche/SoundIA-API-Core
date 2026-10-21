@@ -74,6 +74,13 @@ class RestClientConfigTests {
     }
 
     @Test
+    void construyeLaUrlDeLosEndpointsDelMotorDeMezcla() {
+        contextRunner.withPropertyValues("soundia.ia-engine.base-url=http://ia.interno:9000")
+                .run(context -> assertEquals("http://ia.interno:9000/api/mix/next",
+                        context.getBean(IaEngineProperties.class).mixUrl("next")));
+    }
+
+    @Test
     void elTimeoutDeAnalisisSeConfiguraPorPropiedad() {
         contextRunner.withPropertyValues("soundia.ia-engine.analysis-timeout=45s")
                 .run(context -> assertEquals(Duration.ofSeconds(45),

@@ -25,6 +25,12 @@ public record IaEngineProperties(
         return base + "/api/audio/" + path;
     }
 
+    /** URL de un endpoint del motor de mezcla, por ejemplo mixUrl("next"). */
+    public String mixUrl(String path) {
+        String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        return base + "/api/mix/" + path;
+    }
+
     /** Endpoint del motor de IA que calcula la transicion de mezcla. */
     public String mixCalculateUrl() {
         String base = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
