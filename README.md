@@ -79,6 +79,24 @@ Los errores 400, 404, 413 y 422 del motor de IA se devuelven **con su código y 
 silencio»); cualquier otro fallo del motor se muestra como un 502 genérico. El análisis usa un timeout propio
 (`soundia.ia-engine.analysis-timeout`, 120 s por defecto).
 
+### Auto-DJ (`/api/v1/autodj` y cola de sesión)
+
+La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el motor de IA; este API valida y reenvía).
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/v1/autodj/next` | `{trackId, limit?}` (límite 1-20). Pistas que mejor siguen a la indicada, con su puntuación de compatibilidad (tempo, armonía, energía). |
+| `POST` | `/api/v1/autodj/transition` | `{fromTrackId, toTrackId}`. Plan de transición: estilo (`blend`/`cut`), compases, segundo de salida y de entrada, y curvas de crossfader/EQ por pulso. |
+
+**Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Orden FIFO; máximo 100 pistas; solo en sesiones abiertas.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/` | `{trackId}`. Encola una pista (verifica que exista en el motor de IA). 201; 409 si la sesión está cerrada o la cola llena. |
+| `GET` | `/` | La cola en orden de reproducción. |
+| `POST` | `/next` | Saca de la cola y devuelve la pista que toca; 404 si está vacía. |
+| `DELETE` | `/{itemId}` | Quita un elemento; 204, o 404 si no está en esa sesión. |
+
 ### Flujo en vivo (SSE)
 
 `GET /api/v1/midi/stream` mantiene la conexión abierta (`text/event-stream`) y envía:

@@ -28,8 +28,8 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 ## Fase 4 — Auto-DJ
 
-- [ ] feat(autodj): endpoint que pide al motor la siguiente pista y la transición [4.1]
-- [ ] feat(autodj): cola de reproducción por sesión [4.2]
+- [x] feat(autodj): endpoint que pide al motor la siguiente pista y la transición [4.1]
+- [x] feat(autodj): cola de reproducción por sesión [4.2]
 
 ## Fase 5 — Despliegue y seguridad
 
