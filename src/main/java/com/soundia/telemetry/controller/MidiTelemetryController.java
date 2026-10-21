@@ -1,6 +1,7 @@
 package com.soundia.telemetry.controller;
 
 import com.soundia.telemetry.pattern.DjControllerReader;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.soundia.telemetry.model.DjSessionLog;
@@ -30,7 +31,7 @@ public class MidiTelemetryController {
     
     // El hardware envie el JSON aqui. @RequestBody lo transforma automaticamente a una entidad Java.
     @PostMapping("/event")
-    public ResponseEntity<String> receiveMidiEvent(@RequestBody DjSessionLogDto dto){
+    public ResponseEntity<String> receiveMidiEvent(@Valid @RequestBody DjSessionLogDto dto){
         // Mapeo manual: Transferimos datos DTO seguro a la Entidad de BD.
         DjSessionLog logEvent = new DjSessionLog();
         logEvent.setControlId(dto.controlId());

@@ -6,7 +6,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 ## Fase 1 — Estabilizar lo existente
 
 - [x] fix(deps): reemplazar spring-boot-starter-aop 3.2.0 por spring-boot-starter-aspectj gestionado por Boot 4.1 [1.1]
-- [ ] feat(validation): validar DjSessionLogDto (campos no nulos, valor MIDI entre 0 y 127) [1.2]
+- [x] feat(validation): validar DjSessionLogDto (campos no nulos, valor MIDI entre 0 y 127) [1.2]
 - [ ] fix(telemetry): unificar el flujo de /event y /ai/predict y guardar la decisión de la IA [1.3]
 - [ ] refactor(config): mover credenciales de PostgreSQL a variables de entorno [1.4]
 - [ ] refactor(config): bean de RestTemplate con timeouts y URL de Django configurable [1.5]
