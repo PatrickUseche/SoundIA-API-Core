@@ -3,24 +3,25 @@ package com.soundia.telemetry.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.soundia.config.RestClientConfig;
+import com.soundia.telemetry.dto.AiDecisionDto;
 import com.soundia.telemetry.model.DjSessionLog;
 import com.soundia.telemetry.pattern.DjControllerReader;
 import com.soundia.telemetry.repository.DjSessionLogRepository;
+import com.soundia.telemetry.service.MidiEventService;
 
 @WebMvcTest(MidiTelemetryController.class)
-@Import(RestClientConfig.class)
 class MidiTelemetryControllerTests {
 
     @Autowired
@@ -31,6 +32,9 @@ class MidiTelemetryControllerTests {
 
     @MockitoBean
     private DjSessionLogRepository repository;
+
+    @MockitoBean
+    private MidiEventService midiEventService;
 
     private void postEvent(String json, int expectedStatus) throws Exception {
         mockMvc.perform(post("/api/v1/midi/event")
@@ -97,5 +101,27 @@ class MidiTelemetryControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"controlId\":14,\"value\":300}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void prediccionValidaDevuelveLaDecisionDelServicioQueLaGuarda() throws Exception {
+        when(midiEventService.decideAndStore(14, 127))
+                .thenReturn(new AiDecisionDto("success", "Corte de EQ en deck 14"));
+
+        mockMvc.perform(post("/api/v1/midi/ai/predict")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"controlId\":14,\"value\":127}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.action").value("Corte de EQ en deck 14"));
+
+        verify(midiEventService).decideAndStore(14, 127);
+    }
+
+    @Test
+    void elEventoMidiNoLlamaDirectoAlServicioSinoPorLosObservadores() throws Exception {
+        postEvent("{\"controlId\":14,\"value\":127}", 200);
+
+        verify(midiEventService, never()).decideAndStore(any(), any());
     }
 }
