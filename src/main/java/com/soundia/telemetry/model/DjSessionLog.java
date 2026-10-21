@@ -21,6 +21,10 @@ public class DjSessionLog {
     @Column(name = "action")
     private String action;
 
+    // Sesion de DJ abierta cuando llego el evento; null si no habia ninguna.
+    @Column(name = "session_id")
+    private Long sessionId;
+
     @Column(name = "created_in", updatable = false)
     private LocalDateTime createdIn;
 
@@ -64,6 +68,14 @@ public class DjSessionLog {
 
     public void setValue(Integer value) {
         this.value = value;
+    }
+
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getAction() {

@@ -39,4 +39,18 @@ class DjSessionLogTests {
 
         assertNotNull(log.getCreatedIn());
     }
+
+    @Test
+    void sinSesionElSessionIdEsNulo() {
+        assertNull(new DjSessionLog(14, 127).getSessionId());
+    }
+
+    @Test
+    void conservaLaSesionAsignada() {
+        DjSessionLog log = new DjSessionLog(14, 127);
+
+        log.setSessionId(3L);
+
+        assertEquals(3L, log.getSessionId());
+    }
 }
