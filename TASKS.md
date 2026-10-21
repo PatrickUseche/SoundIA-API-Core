@@ -12,7 +12,6 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [x] refactor(config): bean de RestTemplate con timeouts y URL de Django configurable [1.5]
 - [x] feat(errors): manejo global de errores con @ControllerAdvice [1.6]
 - [x] test(telemetry): pruebas unitarias de observers y controlador, y contextLoads sin PostgreSQL real [1.7]
-- [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway [1.8]
 - [ ] chore: limpiar pom.xml (metadatos vacíos e indentación) [1.9]
 
 ## Fase 2 — Tiempo real
@@ -37,3 +36,4 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [ ] feat(security): autenticación con Spring Security y JWT [5.1]
 - [ ] chore(docker): Dockerfile y docker-compose con PostgreSQL, Django y Spring [5.2]
 - [ ] chore(ci): pipeline de GitHub Actions con build y tests [5.3]
+- [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway (V1 esquema actual, V2 columna action) [5.4]
