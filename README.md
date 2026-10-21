@@ -74,6 +74,7 @@ este API solo reenvía y devuelve el JSON sin tocarlo.
 | `POST` | `/analyze` | `multipart/form-data` con `file` (WAV, FLAC, OGG o MP3; máx. 50 MB) y `title` opcional. Devuelve 201 con la pista analizada. Analizar tarda unos segundos. |
 | `GET` | `/` | Pistas analizadas (las 50 más recientes). |
 | `GET` | `/{id}` | Una pista. |
+| `GET` | `/{id}/audio` | El audio original (con su `Content-Type`), para decodificarlo y reproducirlo en un deck. Se descarga entero (máx. 50 MB). 404 si la pista no tiene audio. |
 
 Los errores 400, 404, 413 y 422 del motor de IA se devuelven **con su código y su mensaje** (por ejemplo, 422 «El audio es
 silencio»); cualquier otro fallo del motor se muestra como un 502 genérico. El análisis usa un timeout propio
