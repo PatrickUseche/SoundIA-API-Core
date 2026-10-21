@@ -29,6 +29,17 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse("Validacion fallida", detalles));
     }
 
+    // Estos mensajes los escribe la propia aplicacion para el usuario, por eso se devuelven tal cual.
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(e.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.of(e.getMessage()));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
         log.warn("Cuerpo de peticion ilegible: {}", e.getMessage());
