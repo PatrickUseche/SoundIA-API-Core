@@ -12,7 +12,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [x] refactor(config): bean de RestTemplate con timeouts y URL de Django configurable [1.5]
 - [x] feat(errors): manejo global de errores con @ControllerAdvice [1.6]
 - [x] test(telemetry): pruebas unitarias de observers y controlador, y contextLoads sin PostgreSQL real [1.7]
-- [ ] chore: limpiar pom.xml (metadatos vacíos e indentación) [1.9]
+- [x] chore: limpiar pom.xml (metadatos vacíos e indentación) [1.9]
 
 ## Fase 2 — Tiempo real
 
