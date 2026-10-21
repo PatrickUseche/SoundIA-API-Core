@@ -60,4 +60,17 @@ class LiveStreamControllerTests {
 
         assertTrue(result.getResponse().getContentType().startsWith("text/event-stream"));
     }
+
+    @Test
+    void elLatidoLlegaComoComentarioSseSinSerUnEvento() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/midi/stream").accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        liveStream.sendHeartbeat();
+
+        String cuerpo = result.getResponse().getContentAsString();
+        assertTrue(cuerpo.contains(":keep-alive"), cuerpo);
+        assertTrue(!cuerpo.contains("event:keep-alive"), cuerpo);
+    }
 }

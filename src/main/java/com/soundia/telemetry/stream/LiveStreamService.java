@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -46,6 +47,22 @@ public class LiveStreamService {
                 // El cliente cerro la conexion: se descarta sin ensuciar los logs.
                 emitters.remove(emitter);
                 log.debug("Cliente SSE descartado: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Comentario SSE periodico (no es un evento): evita que proxies o el navegador cierren por
+     * inactividad una conexion abierta y permite detectar clientes caidos.
+     */
+    @Scheduled(fixedRateString = "${soundia.stream.heartbeat:15s}")
+    public void sendHeartbeat() {
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().comment("keep-alive"));
+            } catch (IOException | IllegalStateException e) {
+                emitters.remove(emitter);
+                log.debug("Cliente SSE descartado en el latido: {}", e.getMessage());
             }
         }
     }
