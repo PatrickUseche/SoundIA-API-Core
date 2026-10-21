@@ -103,4 +103,36 @@ class AutoDjClientTests {
 
         assertEquals(404, error.getStatusCode().value());
     }
+
+    @Test
+    void enviaLaValoracionDeUnaTransicionAlMotor() {
+        respuesta = "{\"weights\":{},\"samples\":1,\"learned\":false}";
+
+        String resultado = client().submitFeedback(1, 2, true);
+
+        assertEquals("{\"weights\":{},\"samples\":1,\"learned\":false}", resultado);
+        assertEquals("POST", metodo.get());
+        assertEquals("/api/mix/feedback", ruta.get());
+        assertTrue(cuerpo.get().contains("\"fromTrackId\":1"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"toTrackId\":2"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"liked\":true"), cuerpo.get());
+    }
+
+    @Test
+    void laValoracionNegativaSeEnviaComoFalse() {
+        client().submitFeedback(1, 2, false);
+
+        assertTrue(cuerpo.get().contains("\"liked\":false"), cuerpo.get());
+    }
+
+    @Test
+    void consultaLosPesosVigentesDelMotor() {
+        respuesta = "{\"weights\":{\"tempo\":0.2},\"learned\":true,\"samples\":40}";
+
+        String resultado = client().weights();
+
+        assertEquals("{\"weights\":{\"tempo\":0.2},\"learned\":true,\"samples\":40}", resultado);
+        assertEquals("GET", metodo.get());
+        assertEquals("/api/mix/weights", ruta.get());
+    }
 }

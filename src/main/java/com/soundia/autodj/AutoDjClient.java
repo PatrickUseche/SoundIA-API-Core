@@ -41,6 +41,16 @@ public class AutoDjClient {
         return post("transition", Map.of("fromTrackId", fromTrackId, "toTrackId", toTrackId));
     }
 
+    /** Registra si le gusto al DJ una transicion; el motor reentrena sus pesos con ella. */
+    public String submitFeedback(long fromTrackId, long toTrackId, boolean liked) {
+        return post("feedback", Map.of("fromTrackId", fromTrackId, "toTrackId", toTrackId, "liked", liked));
+    }
+
+    /** Los pesos de la puntuacion que el motor usa ahora (aprendidos o por defecto). */
+    public String weights() {
+        return restTemplate.getForObject(properties.mixUrl("weights"), String.class);
+    }
+
     private String post(String path, Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
