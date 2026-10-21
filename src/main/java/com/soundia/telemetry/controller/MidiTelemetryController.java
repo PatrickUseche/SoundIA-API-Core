@@ -1,5 +1,6 @@
 package com.soundia.telemetry.controller;
 
+import com.soundia.config.IaEngineProperties;
 import com.soundia.telemetry.pattern.DjControllerReader;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +22,15 @@ public class MidiTelemetryController {
     private final DjControllerReader reader;
     private final DjSessionLogRepository logRepository;
     private final RestTemplate restTemplate;
+    private final IaEngineProperties iaEngine;
     
     // Inyeccion de dependencias. Spring arrastra el Sujeto que ya tiene atado el DatabaseMidiObserver
-    public MidiTelemetryController(DjControllerReader reader, DjSessionLogRepository logRepository) {
+    public MidiTelemetryController(DjControllerReader reader, DjSessionLogRepository logRepository,
+                                   RestTemplate restTemplate, IaEngineProperties iaEngine) {
         this.reader = reader;
         this.logRepository = logRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
+        this.iaEngine = iaEngine;
     }
     
     // El hardware envie el JSON aqui. @RequestBody lo transforma automaticamente a una entidad Java.
@@ -50,12 +54,10 @@ public class MidiTelemetryController {
     
     @PostMapping("/ai/predict")
     public AiDecisionDto getAiPredictAiDecisionDtoion(@Valid @RequestBody DjSessionLogDto eventDto){
-        String pythonAiUrl = "http://localhost:8000/api/mix/calculate";
-        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<DjSessionLogDto> requestEntity = new HttpEntity<>(eventDto, headers);
         
-        return restTemplate.postForObject(pythonAiUrl, requestEntity, AiDecisionDto.class);
+        return restTemplate.postForObject(iaEngine.mixCalculateUrl(), requestEntity, AiDecisionDto.class);
     }
 }

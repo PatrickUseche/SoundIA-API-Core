@@ -1,5 +1,6 @@
 package com.soundia.telemetry.pattern;
 
+import com.soundia.config.IaEngineProperties;
 import com.soundia.telemetry.model.DjSessionLog;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,11 +18,11 @@ import org.springframework.retry.annotation.Recover;
 public class AiMidiObserver implements MidiObserver{
     
     private final RestTemplate restTemplate;
-    // Puerto 8000 es el estandar por defecto al levantar servidores en Python (Django/FastAPI).
-    private final String pythonAiUrl = "http://localhost:8000/api/mix/calculate";
+    private final IaEngineProperties iaEngine;
 
-    public AiMidiObserver() {
-        this.restTemplate = new RestTemplate();
+    public AiMidiObserver(RestTemplate restTemplate, IaEngineProperties iaEngine) {
+        this.restTemplate = restTemplate;
+        this.iaEngine = iaEngine;
     }
     
     @Async
@@ -40,7 +41,7 @@ public class AiMidiObserver implements MidiObserver{
         HttpEntity<DjSessionLog> requestEntity = new HttpEntity<>(logEvent, headers);
         
         // Enviar el paquete estructurado.
-        ResponseEntity<String> response = restTemplate.postForEntity(pythonAiUrl, requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(iaEngine.mixCalculateUrl(), requestEntity, String.class);
         System.out.println("[Motor IA] Transicion calculada por Python: " + response.getBody());
     }
     
