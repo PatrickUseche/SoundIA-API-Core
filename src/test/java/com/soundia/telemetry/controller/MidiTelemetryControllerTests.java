@@ -87,4 +87,12 @@ class MidiTelemetryControllerTests {
     void cuerpoSinJsonValidoSeRechaza() throws Exception {
         postEvent("{no es json", 400);
     }
+
+    @Test
+    void prediccionConValorFueraDeRangoSeRechazaSinLlamarAPython() throws Exception {
+        mockMvc.perform(post("/api/v1/midi/ai/predict")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"controlId\":14,\"value\":300}"))
+                .andExpect(status().isBadRequest());
+    }
 }

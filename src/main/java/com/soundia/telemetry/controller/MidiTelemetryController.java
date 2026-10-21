@@ -49,7 +49,7 @@ public class MidiTelemetryController {
     }
     
     @PostMapping("/ai/predict")
-    public AiDecisionDto getAiPredictAiDecisionDtoion(@RequestBody DjSessionLogDto eventDto){
+    public AiDecisionDto getAiPredictAiDecisionDtoion(@Valid @RequestBody DjSessionLogDto eventDto){
         String pythonAiUrl = "http://localhost:8000/api/mix/calculate";
         
         HttpHeaders headers = new HttpHeaders();
