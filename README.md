@@ -43,7 +43,7 @@ docker compose up --build
 Frontend en http://localhost:4200 y API en http://localhost:8080. La base de datos y los audios guardados viven en
 volúmenes (`db-data`, `ia-data`).
 
-> ⚠️ **Los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
+> **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
 > Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno
 > (`SOUNDIA_IA_ENGINE_BASE_URL`, `SOUNDIA_CORS_ALLOWED_ORIGINS`, `DB_*`). Si algo falla al construir, empezar por las imágenes base.
 
