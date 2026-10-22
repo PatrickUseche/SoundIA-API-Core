@@ -180,4 +180,26 @@ class TrackClientTests {
 
         assertEquals(404, error.getStatusCode().value());
     }
+
+    @Test
+    void fijaElPrimerTiempoConUnPutYDevuelveLaPistaSinTocar() {
+        String resultado = client().setDownbeat(7, 4.6);
+
+        assertEquals(PISTA, resultado);
+        assertEquals("PUT", metodo.get());
+        assertEquals("/api/audio/tracks/7/grid", ruta.get());
+        assertTrue(contentType.get().startsWith("application/json"), contentType.get());
+        assertEquals("{\"downbeat\":4.6}", cuerpo.get());
+    }
+
+    @Test
+    void siDjangoRechazaElPrimerTiempoPropagaElError() {
+        status = 409;
+        respuesta = "{\"error\":\"La pista no tiene una rejilla de pulsos\"}";
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class, () -> client().setDownbeat(7, 4.6));
+
+        assertEquals(409, e.getStatusCode().value());
+    }
+
 }
