@@ -25,6 +25,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [x] feat(session): entidad DjSession para agrupar eventos por sesión [3.1]
 - [x] feat(tracks): consulta de pistas (BPM, tonalidad, energía) como pasarela hacia el motor de IA, que es el dueño de los datos [3.2]
 - [x] feat(tracks): endpoint de subida de audio y reenvío al motor de análisis [3.3]
+- [x] feat(tracks): PUT /tracks/{id}/grid para fijar a mano el primer tiempo de una pista, reenviado al motor de IA [3.4]
 
 ## Fase 4 — Auto-DJ
 
