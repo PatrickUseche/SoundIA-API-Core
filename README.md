@@ -25,9 +25,27 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `DB_PASSWORD` | — (obligatoria) | Contraseña |
 | `soundia.ia-engine.base-url` | `http://localhost:8000` | URL del motor de IA |
 | `soundia.ia-engine.connect-timeout` / `read-timeout` | `2s` / `5s` | Timeouts hacia Django |
+| `soundia.ia-engine.analysis-timeout` | `120s` | Timeout de lectura del análisis de audio |
 | `soundia.cors.allowed-origins` | `http://localhost:4200` | Orígenes permitidos (separados por coma) |
 | `soundia.stream.timeout` | `30m` | Duración máxima de una conexión SSE |
 | `soundia.stream.heartbeat` | `15s` | Intervalo del latido `keep-alive` |
+
+## Con Docker
+
+`docker-compose.yml` levanta PostgreSQL, el motor de IA, este API y el frontend juntos. Necesita los tres repositorios
+clonados uno junto a otro y un `.env` con `DB_PASSWORD` y `DJANGO_SECRET_KEY`:
+
+```bash
+cp .env.example .env     # y edita las contraseñas
+docker compose up --build
+```
+
+Frontend en http://localhost:4200 y API en http://localhost:8080. La base de datos y los audios guardados viven en
+volúmenes (`db-data`, `ia-data`).
+
+> **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
+> Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno
+> (`SOUNDIA_IA_ENGINE_BASE_URL`, `SOUNDIA_CORS_ALLOWED_ORIGINS`, `DB_*`). Si algo falla al construir, empezar por las imágenes base.
 
 ## Ejecutar y probar
 
@@ -45,8 +63,61 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `GET` | `/logs` | Últimos 50 eventos guardados (incluye `action`, `null` si la IA no estuvo disponible). |
 | `GET` | `/stream` | Flujo SSE en vivo (ver abajo). |
 
+### Sesiones (`/api/v1/sessions`)
+
+Una sesión agrupa los eventos MIDI desde que el DJ la inicia hasta que la cierra. **Solo puede haber una abierta a la vez**
+(iniciar otra devuelve 409). Cada evento procesado se asocia a la sesión abierta *en el momento de guardarse*; sin sesión
+abierta se guarda igual, con `sessionId` nulo.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/` | `{name}` (obligatorio, máx. 100). Inicia una sesión: 201 con `Location`; 409 si ya hay una abierta. |
+| `GET` | `/` | Las 20 sesiones más recientes. |
+| `GET` | `/active` | La sesión abierta; 404 si no hay. |
+| `GET` | `/{id}` | Una sesión; 404 si no existe. |
+| `GET` | `/{id}/logs` | Eventos de la sesión, del más antiguo al más reciente (máx. 500). |
+| `POST` | `/{id}/end` | Cierra la sesión; 409 si ya estaba cerrada. |
+
 `controlId` debe ser ≥ 0 y `value` estar entre 0 y 127. Los errores devuelven `{ "error": "...", "detalles": [...] }`
-con 400 (validación), 502 (motor de IA caído) o 500.
+con 400 (validación o petición mal formada), 404, 405, 409 (conflicto), 415, 502 (motor de IA caído) o 500.
+
+### Pistas (`/api/v1/tracks`)
+
+Pasarela hacia el motor de IA: **Django es el dueño de los datos de pista** (BPM, tonalidad, energía, puntos de mezcla);
+este API solo reenvía y devuelve el JSON sin tocarlo.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/analyze` | `multipart/form-data` con `file` (WAV, FLAC, OGG o MP3; máx. 50 MB) y `title` opcional. Devuelve 201 con la pista analizada. Analizar tarda unos segundos. |
+| `GET` | `/` | Pistas analizadas (las 50 más recientes). |
+| `GET` | `/{id}` | Una pista. |
+| `GET` | `/{id}/audio` | El audio original (con su `Content-Type`), para decodificarlo y reproducirlo en un deck. Se descarga entero (máx. 50 MB). 404 si la pista no tiene audio. |
+
+Los errores 400, 404, 413 y 422 del motor de IA se devuelven **con su código y su mensaje** (por ejemplo, 422 «El audio es
+silencio»); cualquier otro fallo del motor se muestra como un 502 genérico. El análisis usa un timeout propio
+(`soundia.ia-engine.analysis-timeout`, 120 s por defecto).
+
+### Auto-DJ (`/api/v1/autodj` y cola de sesión)
+
+La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el motor de IA; este API valida y reenvía).
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/api/v1/autodj/next` | `{trackId, limit?}` (límite 1-20). Pistas que mejor siguen a la indicada, con su puntuación de compatibilidad (tempo, armonía, energía). |
+| `POST` | `/api/v1/autodj/transition` | `{fromTrackId, toTrackId}`. Plan de transición: estilo (`blend`, `fade` si los tempos no se igualan, o `cut`), compases, segundo de salida y de entrada, y curvas de crossfader/EQ por pulso. |
+
+| `POST` | `/api/v1/autodj/feedback` | `{fromTrackId, toTrackId, liked}` (`liked` debe ser `true`/`false`). El DJ valora una transición: el motor la guarda y reajusta cuánto pesan tempo, armonía y energía. 201 con `{weights, samples, learned}`. |
+| `POST` | `/api/v1/autodj/timing` | `{fromTrackId, toTrackId, plannedMixOutAt, actualMixOutAt}` (segundos de la pista saliente, ≥ 0). El DJ pidió mezclar antes de lo planeado: el motor lo guarda y adelanta sus mezclas futuras. 201 con `{samples, advanceSeconds, learned}`. |
+| `GET` | `/api/v1/autodj/weights` | Los pesos de la puntuación vigentes, si son aprendidos y con cuántas valoraciones. |
+
+**Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Orden FIFO; máximo 100 pistas; solo en sesiones abiertas.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/` | `{trackId}`. Encola una pista (verifica que exista en el motor de IA). 201; 409 si la sesión está cerrada o la cola llena. |
+| `GET` | `/` | La cola en orden de reproducción. |
+| `POST` | `/next` | Saca de la cola y devuelve la pista que toca; 404 si está vacía. |
+| `DELETE` | `/{itemId}` | Quita un elemento; 204, o 404 si no está en esa sesión. |
 
 ### Flujo en vivo (SSE)
 

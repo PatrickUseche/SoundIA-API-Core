@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.client.ResourceAccessException;
 
+import com.soundia.session.service.DjSessionService;
 import com.soundia.telemetry.dto.AiDecisionDto;
 import com.soundia.telemetry.model.DjSessionLog;
 import com.soundia.telemetry.repository.DjSessionLogRepository;
@@ -26,6 +27,7 @@ class MidiEventServiceTests {
     private IaEngineClient iaEngine;
     private DjSessionLogRepository repository;
     private ApplicationEventPublisher events;
+    private DjSessionService sessions;
     private MidiEventService service;
 
     @BeforeEach
@@ -35,7 +37,8 @@ class MidiEventServiceTests {
         events = mock(ApplicationEventPublisher.class);
         // save() devuelve el mismo registro, como hace JPA con una entidad nueva.
         when(repository.save(any(DjSessionLog.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
-        service = new MidiEventService(iaEngine, repository, events);
+        sessions = mock(DjSessionService.class);
+        service = new MidiEventService(iaEngine, repository, events, sessions);
     }
 
     @Test
@@ -101,5 +104,40 @@ class MidiEventServiceTests {
         verify(events).publishEvent(evento.capture());
         assertEquals("unavailable", evento.getValue().status());
         assertNull(evento.getValue().log().getAction());
+    }
+
+    @Test
+    void asociaElRegistroALaSesionAbierta() {
+        when(sessions.activeSessionId()).thenReturn(7L);
+        when(iaEngine.calculateMix(14, 127)).thenReturn(new AiDecisionDto("success", "Corte de EQ"));
+
+        service.decideAndStore(14, 127);
+
+        ArgumentCaptor<DjSessionLog> guardado = ArgumentCaptor.forClass(DjSessionLog.class);
+        verify(repository).save(guardado.capture());
+        assertEquals(7L, guardado.getValue().getSessionId());
+    }
+
+    @Test
+    void sinSesionAbiertaElRegistroSeGuardaSinSesion() {
+        when(sessions.activeSessionId()).thenReturn(null);
+        when(iaEngine.calculateMix(14, 127)).thenReturn(new AiDecisionDto("success", "Corte de EQ"));
+
+        service.decideAndStore(14, 127);
+
+        ArgumentCaptor<DjSessionLog> guardado = ArgumentCaptor.forClass(DjSessionLog.class);
+        verify(repository).save(guardado.capture());
+        assertNull(guardado.getValue().getSessionId());
+    }
+
+    @Test
+    void elEventoSinDecisionTambienQuedaEnLaSesionAbierta() {
+        when(sessions.activeSessionId()).thenReturn(7L);
+
+        service.storeWithoutDecision(14, 127);
+
+        ArgumentCaptor<DjSessionLog> guardado = ArgumentCaptor.forClass(DjSessionLog.class);
+        verify(repository).save(guardado.capture());
+        assertEquals(7L, guardado.getValue().getSessionId());
     }
 }

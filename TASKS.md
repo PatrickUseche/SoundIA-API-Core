@@ -22,18 +22,19 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 ## Fase 3 — Sesiones y biblioteca de pistas
 
-- [ ] feat(session): entidad DjSession para agrupar eventos por sesión [3.1]
-- [ ] feat(tracks): entidad Track y CRUD con BPM, tonalidad y energía [3.2]
-- [ ] feat(tracks): endpoint de subida de audio y reenvío al motor de análisis [3.3]
+- [x] feat(session): entidad DjSession para agrupar eventos por sesión [3.1]
+- [x] feat(tracks): consulta de pistas (BPM, tonalidad, energía) como pasarela hacia el motor de IA, que es el dueño de los datos [3.2]
+- [x] feat(tracks): endpoint de subida de audio y reenvío al motor de análisis [3.3]
 
 ## Fase 4 — Auto-DJ
 
-- [ ] feat(autodj): endpoint que pide al motor la siguiente pista y la transición [4.1]
-- [ ] feat(autodj): cola de reproducción por sesión [4.2]
+- [x] feat(autodj): endpoint que pide al motor la siguiente pista y la transición [4.1]
+- [x] feat(autodj): cola de reproducción por sesión [4.2]
+- [x] feat(autodj): valoración de transiciones (me gustó / no me gustó) reenviada al motor, que aprende sus pesos [4.3]
 
 ## Fase 5 — Despliegue y seguridad
 
 - [ ] feat(security): autenticación con Spring Security y JWT [5.1]
-- [ ] chore(docker): Dockerfile y docker-compose con PostgreSQL, Django y Spring [5.2]
+- [x] chore(docker): Dockerfile y docker-compose con PostgreSQL, Django y Spring [5.2] (escritos pero sin probar: no hay Docker en la máquina de desarrollo)
 - [x] chore(ci): pipeline de GitHub Actions con build y tests [5.3]
 - [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway (V1 esquema actual, V2 columna action) [5.4]

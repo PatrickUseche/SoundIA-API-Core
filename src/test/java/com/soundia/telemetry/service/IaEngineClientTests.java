@@ -51,7 +51,8 @@ class IaEngineClientTests {
 
     private IaEngineClient client() {
         IaEngineProperties props = new IaEngineProperties(
-                "http://localhost:" + server.getAddress().getPort(), Duration.ofSeconds(1), Duration.ofSeconds(2));
+                "http://localhost:" + server.getAddress().getPort(), Duration.ofSeconds(1), Duration.ofSeconds(2),
+                Duration.ofSeconds(60));
         return new IaEngineClient(new RestClientConfig().iaEngineRestTemplate(props), props);
     }
 

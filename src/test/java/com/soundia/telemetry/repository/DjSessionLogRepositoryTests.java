@@ -60,4 +60,45 @@ class DjSessionLogRepositoryTests {
 
         assertEquals(50, repository.findTop50ByOrderByCreatedInDesc().size());
     }
+
+    private DjSessionLog enSesion(long sesion, int valor) {
+        DjSessionLog log = new DjSessionLog(1, valor);
+        log.setSessionId(sesion);
+        return repository.saveAndFlush(log);
+    }
+
+    @Test
+    void devuelveSoloLosEventosDeLaSesionPedida() {
+        enSesion(1, 10);
+        enSesion(2, 20);
+        enSesion(1, 11);
+
+        List<DjSessionLog> logs = repository.findTop500BySessionIdOrderByCreatedInAscIdAsc(1L);
+
+        assertEquals(List.of(10, 11), logs.stream().map(DjSessionLog::getValue).toList());
+    }
+
+    @Test
+    void losEventosDeUnaSesionVanDelMasAntiguoAlMasReciente() throws InterruptedException {
+        for (int valor = 1; valor <= 3; valor++) {
+            enSesion(5, valor);
+            Thread.sleep(5);
+        }
+
+        List<DjSessionLog> logs = repository.findTop500BySessionIdOrderByCreatedInAscIdAsc(5L);
+
+        assertEquals(List.of(1, 2, 3), logs.stream().map(DjSessionLog::getValue).toList());
+    }
+
+    @Test
+    void unaSesionSinEventosDevuelveListaVacia() {
+        assertEquals(0, repository.findTop500BySessionIdOrderByCreatedInAscIdAsc(99L).size());
+    }
+
+    @Test
+    void persisteElSessionId() {
+        DjSessionLog guardado = enSesion(8, 1);
+
+        assertEquals(8L, repository.findById(guardado.getId()).orElseThrow().getSessionId());
+    }
 }
