@@ -2,6 +2,7 @@ package com.soundia.track;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +32,8 @@ class TrackClientTests {
     private final AtomicReference<String> metodo = new AtomicReference<>();
     private final AtomicReference<String> ruta = new AtomicReference<>();
     private final AtomicReference<String> contentType = new AtomicReference<>();
+    private final AtomicReference<String> contentLength = new AtomicReference<>();
+    private final AtomicReference<String> transferEncoding = new AtomicReference<>();
     private final AtomicReference<String> cuerpo = new AtomicReference<>();
     private volatile int status = 200;
     private volatile String respuesta = PISTA;
@@ -44,6 +47,8 @@ class TrackClientTests {
             metodo.set(exchange.getRequestMethod());
             ruta.set(exchange.getRequestURI().getPath());
             contentType.set(exchange.getRequestHeaders().getFirst("Content-Type"));
+            contentLength.set(exchange.getRequestHeaders().getFirst("Content-Length"));
+            transferEncoding.set(exchange.getRequestHeaders().getFirst("Transfer-Encoding"));
             cuerpo.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.ISO_8859_1));
             responder(exchange);
         });
@@ -82,6 +87,15 @@ class TrackClientTests {
         assertEquals("/api/audio/analyze", ruta.get());
         assertTrue(contentType.get().startsWith("multipart/form-data"), contentType.get());
         assertTrue(contentType.get().contains("boundary="), contentType.get());
+    }
+
+    @Test
+    void laSubidaLlevaContentLengthYNoVaEnChunks() {
+        client().analyze("tema.wav", "Mi tema", "RIFFdatos".getBytes(StandardCharsets.ISO_8859_1));
+
+        // Django con runserver (WSGI) no entiende Transfer-Encoding: chunked.
+        assertNull(transferEncoding.get(), transferEncoding.get());
+        assertEquals(String.valueOf(cuerpo.get().length()), contentLength.get());
     }
 
     @Test

@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
@@ -28,6 +29,8 @@ public class RestClientConfig {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(properties.connectTimeout());
         factory.setReadTimeout(readTimeout);
-        return new RestTemplate(factory);
+        // Se guarda el cuerpo en memoria para enviar Content-Length: Django en desarrollo (runserver, WSGI)
+        // no lee Transfer-Encoding: chunked, que es lo que enviaria una subida multipart en streaming.
+        return new RestTemplate(new BufferingClientHttpRequestFactory(factory));
     }
 }
