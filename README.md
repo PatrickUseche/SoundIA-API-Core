@@ -29,6 +29,51 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `soundia.cors.allowed-origins` | `http://localhost:4200` | Orígenes permitidos (separados por coma) |
 | `soundia.stream.timeout` | `30m` | Duración máxima de una conexión SSE |
 | `soundia.stream.heartbeat` | `15s` | Intervalo del latido `keep-alive` |
+| `SOUNDIA_AUTH_ENABLED` | `false` | Enciende la autenticación (login con un usuario DJ); ver [Autenticación](#autenticación) |
+| `SOUNDIA_AUTH_USERNAME` / `SOUNDIA_AUTH_PASSWORD` | — (obligatorias si está encendida) | Usuario y contraseña del DJ |
+| `SOUNDIA_AUTH_JWT_SECRET` | — (obligatoria si está encendida) | Clave con la que se firman los tokens: al menos 32 caracteres, aleatoria y secreta |
+| `soundia.auth.token-ttl` | `8h` | Vida del token de acceso |
+| `soundia.auth.stream-ticket-ttl` | `30s` | Vida del ticket para abrir el stream en vivo |
+| `soundia.auth.max-login-attempts` / `login-window` | `5` / `1m` | Intentos fallidos por dirección antes de bloquear con 429 |
+
+## Autenticación
+
+Viene **apagada por defecto**: el API funciona sin login, como hasta ahora. Para encenderla (hazlo en cualquier
+despliegue):
+
+```
+SOUNDIA_AUTH_ENABLED=true
+SOUNDIA_AUTH_USERNAME=dj
+SOUNDIA_AUTH_PASSWORD=<una contraseña larga>
+SOUNDIA_AUTH_JWT_SECRET=<32 o más caracteres aleatorios>     # p. ej.: openssl rand -base64 48
+```
+
+Sin alguna de las tres, con la autenticación encendida la aplicación **no arranca** (con un mensaje que dice cuál falta).
+Los valores van solo en variables de entorno o en el `.env` local, nunca en el repositorio.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/v1/auth/status` | Público. `{enabled}`: el front lo usa para saber si hay que pedir login. |
+| `POST` | `/api/v1/auth/login` | Público. `{username, password}` → `{token, expiresAt}`. 401 con un mensaje genérico (no dice si falló el usuario o la contraseña); 429 con `Retry-After` tras demasiados fallos; 404 si la autenticación está apagada. |
+| `POST` | `/api/v1/auth/stream-ticket` | Con token. `{ticket, expiresAt}`: un ticket de 30 s que solo sirve para abrir el stream en vivo. |
+
+Con la autenticación encendida **todas las rutas `/api/**`** (salvo el login y el estado) exigen
+`Authorization: Bearer <token>`; si no, 401. Las peticiones `OPTIONS` (preflight de CORS) pasan sin token, y las
+respuestas 401 llevan las cabeceras de CORS para que el navegador muestre «no autorizado» y no un error de red.
+
+- **El stream en vivo** (`GET /api/v1/midi/stream`) lo abre el navegador con `EventSource`, que no puede enviar
+  cabeceras. Por eso se acepta también `?ticket=<ticket>`, y **solo** en esa ruta y con ese método: el ticket dura 30 s y
+  no sirve para nada más, así el token de acceso nunca viaja en una URL. Hay que pedir un ticket nuevo cada vez que se
+  abra o reconecte el stream.
+- **Tokens:** JWT firmados con HS256 (se rechaza cualquier otro algoritmo, incluido `none`), con emisor, caducidad y
+  clase (`access` o `stream`) comprobados. La contraseña configurada solo se guarda en memoria como hash BCrypt.
+- **Límite de intentos:** 5 fallos por dirección en 1 minuto bloquean esa dirección; un login correcto borra los fallos.
+
+Limitaciones: es **un solo usuario**; los tokens no se pueden revocar antes de que caduquen (hay que cambiar
+`SOUNDIA_AUTH_JWT_SECRET` y reiniciar para invalidarlos todos); el límite de intentos está en memoria, se reinicia con
+la aplicación y mide la dirección de la conexión (detrás de un proxy inverso todos los clientes comparten la del
+proxy); usa **HTTPS** en producción, porque el token y la contraseña viajan en cada petición; y el motor de IA
+(Django) **no tiene autenticación propia**: no lo expongas a Internet, solo debe verlo este API.
 
 ## Con Docker
 

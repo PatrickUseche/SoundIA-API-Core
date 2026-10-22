@@ -53,6 +53,11 @@ services:
       # Spring lee soundia.ia-engine.base-url y soundia.cors.allowed-origins de estas variables.
       SOUNDIA_IA_ENGINE_BASE_URL: http://ia-engine:8000
       SOUNDIA_CORS_ALLOWED_ORIGINS: http://localhost:4200
+      # Autenticacion (apagada por defecto); para encenderla define estas variables en el .env (ver .env.example).
+      SOUNDIA_AUTH_ENABLED: ${SOUNDIA_AUTH_ENABLED:-false}
+      SOUNDIA_AUTH_USERNAME: ${SOUNDIA_AUTH_USERNAME:-}
+      SOUNDIA_AUTH_PASSWORD: ${SOUNDIA_AUTH_PASSWORD:-}
+      SOUNDIA_AUTH_JWT_SECRET: ${SOUNDIA_AUTH_JWT_SECRET:-}
     ports:
       - "8080:8080"
 
