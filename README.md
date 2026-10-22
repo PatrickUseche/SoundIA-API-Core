@@ -173,6 +173,7 @@ La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el moto
 |---|---|---|
 | `midi` | `{"controlId":14,"value":127}` | Al llegar un evento MIDI |
 | `decision` | `{"id":1,"controlId":14,"value":127,"status":"success","action":"...","createdIn":"..."}` | Cuando la IA responde y se guarda. Si la IA no responde tras 3 intentos, `status` es `unavailable` y `action` es `null`. |
+| *(comentario)* `:conectado` | — | Nada más conectarse: hace salir las cabeceras para que el navegador sepa que la conexión está abierta (sin él tardaría hasta el primer latido, 15 s) |
 | *(comentario)* `:keep-alive` | — | Cada 15 s, para mantener viva la conexión |
 
 Ejemplo en el navegador:
