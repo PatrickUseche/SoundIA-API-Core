@@ -28,13 +28,23 @@ public class LiveStreamService {
         this.timeoutMillis = timeout.toMillis();
     }
 
-    /** Registra un cliente nuevo y le avisa que la conexion quedo abierta. */
+    /**
+     * Registra un cliente nuevo y le avisa que la conexion quedo abierta. Ese aviso inicial (un comentario SSE) es
+     * necesario: sin enviar nada, las cabeceras de la respuesta no salen hasta el primer evento o latido (hasta 15 s) y
+     * el navegador sigue mostrando "conectando" aunque la conexion ya este abierta.
+     */
     public SseEmitter register() {
         SseEmitter emitter = new SseEmitter(timeoutMillis);
         emitters.add(emitter);
         emitter.onCompletion(() -> emitters.remove(emitter));
         emitter.onTimeout(() -> emitters.remove(emitter));
         emitter.onError(e -> emitters.remove(emitter));
+        try {
+            emitter.send(SseEmitter.event().comment("conectado"));
+        } catch (IOException | IllegalStateException e) {
+            emitters.remove(emitter);
+            log.debug("No se pudo avisar la apertura al cliente SSE: {}", e.getMessage());
+        }
         return emitter;
     }
 

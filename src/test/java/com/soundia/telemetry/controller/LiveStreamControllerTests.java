@@ -53,6 +53,18 @@ class LiveStreamControllerTests {
     }
 
     @Test
+    void alConectarAvisaAlClienteDeInmediatoSinEsperarAlPrimerLatido() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/midi/stream").accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        // Sin tocar el latido ni publicar nada: el aviso inicial es lo que hace salir las cabeceras.
+        String cuerpo = result.getResponse().getContentAsString();
+        assertTrue(cuerpo.contains(":conectado"), cuerpo);
+        assertTrue(!cuerpo.contains("event:"), cuerpo);
+    }
+
+    @Test
     void respondeConContentTypeEventStream() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/midi/stream").accept(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(status().isOk())
