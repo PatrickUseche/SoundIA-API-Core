@@ -165,6 +165,19 @@ La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el moto
 | `POST` | `/next` | Saca de la cola y devuelve la pista que toca; 404 si está vacía. |
 | `DELETE` | `/{itemId}` | Quita un elemento; 204, o 404 si no está en esa sesión. |
 
+### Grabaciones de mezclas (`/api/v1/recordings`)
+
+Para que el sistema aprenda el estilo de un DJ hay que guardar lo que hace al pasar de una pista a otra. Son rutas de
+pasarela: los datos y la validación viven en el motor de IA (ver su README para los campos, las curvas y los rasgos).
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/` | Guarda una transición: `{fromTrackId, toTrackId, mixOutAt, mixInAt, overlapSeconds, pitchA, pitchB, curves?, ...}`. 201 con la grabación y sus rasgos; 400 si el motor la rechaza o el cuerpo está vacío o pasa de 256 KB. |
+| `GET` | `/` | Las más recientes sin curvas, con un resumen por calidad. `?quality=good` filtra (`unreviewed`, `good`, `discard`). |
+| `GET` | `/{id}` | Una grabación con sus curvas y la foto de las pistas. |
+| `PUT` | `/{id}` | `{quality?, notes?}`: la revisión del DJ. |
+| `DELETE` | `/{id}` | La borra (204). |
+
 ### Flujo en vivo (SSE)
 
 `GET /api/v1/midi/stream` mantiene la conexión abierta (`text/event-stream`) y envía:
