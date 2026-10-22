@@ -38,3 +38,9 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 - [x] chore(docker): Dockerfile y docker-compose con PostgreSQL, Django y Spring [5.2] (escritos pero sin probar: no hay Docker en la máquina de desarrollo)
 - [x] chore(ci): pipeline de GitHub Actions con build y tests [5.3]
 - [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway (V1 esquema actual, V2 columna action) [5.4]
+
+## Fase 6 — Pendiente
+
+- [ ] test(docker): construir y probar el Dockerfile y el docker-compose en una máquina con Docker y PostgreSQL [6.1]
+- [ ] chore(security): quitar la contraseña antigua del historial de git, o rotarla (sigue en commits antiguos) [6.2]
+- [ ] test(integration): probar el flujo completo contra Django y la web reales, no solo con dobles de prueba [6.3]
