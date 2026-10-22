@@ -46,6 +46,16 @@ public class AutoDjClient {
         return post("feedback", Map.of("fromTrackId", fromTrackId, "toTrackId", toTrackId, "liked", liked));
     }
 
+    /** Registra que el DJ pidio mezclar antes de lo planeado; el motor aprende de ello cuando mezclar. */
+    public String submitMixTiming(long fromTrackId, long toTrackId, double plannedMixOutAt, double actualMixOutAt) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("fromTrackId", fromTrackId);
+        body.put("toTrackId", toTrackId);
+        body.put("plannedMixOutAt", plannedMixOutAt);
+        body.put("actualMixOutAt", actualMixOutAt);
+        return post("timing", body);
+    }
+
     /** Los pesos de la puntuacion que el motor usa ahora (aprendidos o por defecto). */
     public String weights() {
         return restTemplate.getForObject(properties.mixUrl("weights"), String.class);

@@ -181,6 +181,45 @@ class AutoDjControllerTests {
     }
 
     @Test
+    void registraCuandoElDjPidioMezclarYDevuelveLoAprendido() throws Exception {
+        when(autoDj.submitMixTiming(1, 2, 290.5, 250.0))
+                .thenReturn("{\"samples\":3,\"advanceSeconds\":40.0,\"learned\":true}");
+
+        enviar("/api/v1/autodj/timing",
+                "{\"fromTrackId\":1,\"toTrackId\":2,\"plannedMixOutAt\":290.5,\"actualMixOutAt\":250}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.advanceSeconds").value(40.0))
+                .andExpect(jsonPath("$.learned").value(true));
+
+        verify(autoDj).submitMixTiming(1, 2, 290.5, 250.0);
+    }
+
+    @Test
+    void unMomentoDeMezclaInvalidoDevuelve400SinLlamarAlMotor() throws Exception {
+        String[] casos = {
+            "{}",
+            "{\"fromTrackId\":1,\"toTrackId\":2,\"plannedMixOutAt\":10}",                         // falta actualMixOutAt
+            "{\"fromTrackId\":1,\"toTrackId\":2,\"plannedMixOutAt\":10,\"actualMixOutAt\":-1}",    // negativo
+            "{\"fromTrackId\":0,\"toTrackId\":2,\"plannedMixOutAt\":10,\"actualMixOutAt\":5}",     // id no positivo
+            "{\"fromTrackId\":1,\"toTrackId\":2,\"plannedMixOutAt\":\"x\",\"actualMixOutAt\":5}",  // no es numero
+        };
+        for (String caso : casos) {
+            enviar("/api/v1/autodj/timing", caso).andExpect(status().isBadRequest());
+        }
+
+        verify(autoDj, never()).submitMixTiming(anyLong(), anyLong(),
+                org.mockito.ArgumentMatchers.anyDouble(), org.mockito.ArgumentMatchers.anyDouble());
+    }
+
+    @Test
+    void unMomentoDeMezclaDeUnaPistaConsigoMismaDevuelve400() throws Exception {
+        enviar("/api/v1/autodj/timing",
+                "{\"fromTrackId\":5,\"toTrackId\":5,\"plannedMixOutAt\":10,\"actualMixOutAt\":5}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("No se puede mezclar una pista consigo misma."));
+    }
+
+    @Test
     void consultaLosPesosVigentes() throws Exception {
         when(autoDj.weights()).thenReturn("{\"weights\":{\"tempo\":0.2,\"harmonic\":0.6,\"energy\":0.2},\"learned\":true,\"samples\":40}");
 

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.soundia.autodj.dto.FeedbackRequest;
+import com.soundia.autodj.dto.MixTimingRequest;
 import com.soundia.autodj.dto.NextTracksRequest;
 import com.soundia.autodj.dto.TransitionRequest;
 import com.soundia.config.BadRequestException;
@@ -52,6 +53,20 @@ public class AutoDjController {
             throw new BadRequestException("No se puede valorar una transicion de una pista a si misma.");
         }
         String body = autoDj.submitFeedback(request.fromTrackId(), request.toTrackId(), request.liked());
+        return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(body);
+    }
+
+    /**
+     * El DJ pidio mezclar antes de lo que el Auto-DJ habia planeado. El motor guarda el caso y, con suficientes,
+     * adelanta sus mezclas. Devuelve cuantos casos lleva y el adelanto vigente.
+     */
+    @PostMapping("/timing")
+    public ResponseEntity<String> timing(@Valid @RequestBody MixTimingRequest request) {
+        if (request.fromTrackId().equals(request.toTrackId())) {
+            throw new BadRequestException("No se puede mezclar una pista consigo misma.");
+        }
+        String body = autoDj.submitMixTiming(request.fromTrackId(), request.toTrackId(),
+                request.plannedMixOutAt(), request.actualMixOutAt());
         return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(body);
     }
 

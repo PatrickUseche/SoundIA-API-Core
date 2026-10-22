@@ -126,6 +126,21 @@ class AutoDjClientTests {
     }
 
     @Test
+    void enviaAlMotorCuandoElDjPidioMezclar() {
+        respuesta = "{\"samples\":3,\"advanceSeconds\":40.0,\"learned\":true}";
+
+        String resultado = client().submitMixTiming(1, 2, 290.5, 250.0);
+
+        assertEquals("{\"samples\":3,\"advanceSeconds\":40.0,\"learned\":true}", resultado);
+        assertEquals("POST", metodo.get());
+        assertEquals("/api/mix/timing", ruta.get());
+        assertTrue(cuerpo.get().contains("\"fromTrackId\":1"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"toTrackId\":2"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"plannedMixOutAt\":290.5"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"actualMixOutAt\":250.0"), cuerpo.get());
+    }
+
+    @Test
     void consultaLosPesosVigentesDelMotor() {
         respuesta = "{\"weights\":{\"tempo\":0.2},\"learned\":true,\"samples\":40}";
 
