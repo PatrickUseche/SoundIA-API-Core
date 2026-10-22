@@ -34,7 +34,7 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 ## Fase 5 — Despliegue y seguridad
 
-- [ ] feat(security): autenticación con Spring Security y JWT [5.1]
+- [x] feat(security): autenticación con un usuario DJ y JWT, apagada por defecto (SOUNDIA_AUTH_ENABLED); el front se adapta en su repositorio [5.1] (filtro propio con Nimbus + BCrypt, no Spring Security: éste rompería las pruebas de los controladores)
 - [x] chore(docker): Dockerfile y docker-compose con PostgreSQL, Django y Spring [5.2] (escritos pero sin probar: no hay Docker en la máquina de desarrollo)
 - [x] chore(ci): pipeline de GitHub Actions con build y tests [5.3]
 - [ ] chore(db): reemplazar ddl-auto=update por migraciones con Flyway (V1 esquema actual, V2 columna action) [5.4]
