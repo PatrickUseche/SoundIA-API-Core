@@ -4,12 +4,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 import com.soundia.config.IaEngineProperties;
 
@@ -51,6 +54,15 @@ public class TrackClient {
 
     public String getTrack(long id) {
         return restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class);
+    }
+
+    /**
+     * El DJ senala un instante (segundos) que es un "1" del compas: Django lo ajusta al pulso mas cercano de la
+     * rejilla y lo guarda como primer tiempo. Devuelve la pista actualizada (JSON).
+     */
+    public String setDownbeat(long id, double downbeat) {
+        return restTemplate.exchange(properties.audioUrl("tracks/" + id + "/grid"), HttpMethod.PUT,
+                new HttpEntity<>(Map.of("downbeat", downbeat)), String.class).getBody();
     }
 
     /**

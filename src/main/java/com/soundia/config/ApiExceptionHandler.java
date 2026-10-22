@@ -38,8 +38,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     // Errores del motor de IA que son culpa de la peticion del usuario y se le muestran tal cual
-    // (archivo ilegible, demasiado grande, imposible de analizar, pista inexistente).
-    private static final Set<Integer> PASSTHROUGH_STATUSES = Set.of(400, 404, 413, 422);
+    // (archivo ilegible, demasiado grande, imposible de analizar, pista inexistente, pista sin rejilla de pulsos).
+    private static final Set<Integer> PASSTHROUGH_STATUSES = Set.of(400, 404, 409, 413, 422);
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @Override

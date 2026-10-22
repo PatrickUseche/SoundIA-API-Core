@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -185,4 +186,69 @@ class TrackControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("La pista no tiene audio guardado."));
     }
+
+    @Test
+    void fijaElPrimerTiempoYDevuelveLaPistaDeDjango() throws Exception {
+        when(tracks.setDownbeat(1, 4.6)).thenReturn(PISTA);
+
+        mockMvc.perform(put("/api/v1/tracks/1/grid").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"downbeat\":4.6}"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void elPrimerTiempoAceptaUnEntero() throws Exception {
+        when(tracks.setDownbeat(1, 4.0)).thenReturn(PISTA);
+
+        mockMvc.perform(put("/api/v1/tracks/1/grid").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"downbeat\":4}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void unPrimerTiempoInvalidoDevuelve400SinLlamarAlMotor() throws Exception {
+        for (String cuerpo : new String[] {"{}", "{\"downbeat\":null}", "{\"downbeat\":-1}",
+                "{\"downbeat\":true}", "{\"downbeat\":\"abc\"}", "no es json", ""}) {
+            mockMvc.perform(put("/api/v1/tracks/1/grid").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+                    .andExpect(status().isBadRequest());
+        }
+
+        verify(tracks, never()).setDownbeat(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyDouble());
+    }
+
+    @Test
+    void siLaPistaNoTieneRejillaDevuelve409ConElMensajeDeDjango() throws Exception {
+        when(tracks.setDownbeat(1, 4.6)).thenThrow(HttpClientErrorException.create(
+                HttpStatus.CONFLICT, "Conflict", new org.springframework.http.HttpHeaders(),
+                "{\"error\":\"La pista no tiene una rejilla de pulsos (no tiene un ritmo claro)\"}".getBytes(),
+                java.nio.charset.StandardCharsets.UTF_8));
+
+        mockMvc.perform(put("/api/v1/tracks/1/grid").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"downbeat\":4.6}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("La pista no tiene una rejilla de pulsos (no tiene un ritmo claro)"));
+    }
+
+    @Test
+    void unaPistaInexistenteEnDjangoDevuelve404() throws Exception {
+        when(tracks.setDownbeat(99, 4.6)).thenThrow(HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", new org.springframework.http.HttpHeaders(),
+                "{\"error\":\"Pista no encontrada\"}".getBytes(), java.nio.charset.StandardCharsets.UTF_8));
+
+        mockMvc.perform(put("/api/v1/tracks/99/grid").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"downbeat\":4.6}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void siDjangoNoRespondeAlFijarElPrimerTiempoDevuelve502() throws Exception {
+        when(tracks.setDownbeat(1, 4.6)).thenThrow(new ResourceAccessException("Connection refused"));
+
+        mockMvc.perform(put("/api/v1/tracks/1/grid").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"downbeat\":4.6}"))
+                .andExpect(status().isBadGateway());
+    }
+
 }
