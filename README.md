@@ -34,6 +34,7 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `SOUNDIA_AUTH_JWT_SECRET` | — (obligatoria si está encendida) | Clave con la que se firman los tokens: al menos 32 caracteres, aleatoria y secreta |
 | `soundia.auth.token-ttl` | `8h` | Vida del token de acceso |
 | `soundia.auth.stream-ticket-ttl` | `30s` | Vida del ticket para abrir el stream en vivo |
+| `SERVER_FORWARD_HEADERS_STRATEGY` | `none` | Detrás de un proxy inverso, ponlo en `framework` para que el límite de login vea la IP real; no lo uses si el puerto 8080 queda publicado |
 | `soundia.auth.max-login-attempts` / `login-window` | `5` / `1m` | Intentos fallidos por dirección antes de bloquear con 429 |
 
 ## Autenticación
@@ -87,6 +88,20 @@ docker compose up --build
 
 Frontend en http://localhost:4200 y API en http://localhost:8080. La base de datos y los audios guardados viven en
 volúmenes (`db-data`, `ia-data`).
+
+### Producción
+
+`docker-compose.prod.yml` es la versión para un VPS: solo **Caddy** publica puertos (80 y 443) y saca el certificado HTTPS
+solo; el login va siempre encendido y el motor de IA y el API no tienen puertos publicados. Necesitas un dominio con un
+registro DNS A hacia el servidor y, en el `.env`, `DOMAIN`, `DB_PASSWORD`, `DJANGO_SECRET_KEY` y las tres variables
+`SOUNDIA_AUTH_*` (sin ellas no arranca):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Flujo: Internet → Caddy (HTTPS) → nginx (frontend y `/api`) → este API → Django / PostgreSQL. El análisis de voz (Demucs)
+va apagado en producción porque gasta ~800 MB de RAM por análisis.
 
 > **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
 > Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno

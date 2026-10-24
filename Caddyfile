@@ -1,0 +1,15 @@
+# Proxy TLS de produccion (ver docker-compose.prod.yml). Caddy obtiene y renueva el certificado de Let's Encrypt solo,
+# siempre que DOMAIN apunte (registro DNS A) a este servidor y los puertos 80 y 443 esten abiertos.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# El stream en vivo (SSE) y las subidas pasan por nginx (servicio web); sin limites de tiempo ni de cuerpo aqui.
+	reverse_proxy web:80 {
+		flush_interval -1
+	}
+}
