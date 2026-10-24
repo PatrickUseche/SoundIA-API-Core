@@ -74,3 +74,4 @@ Acordado con el usuario (2026-10-24): el DJ usa la versión de la nube, por sesi
 - [x] fix(deploy): reintentar las consultas idempotentes al motor de IA (GET, PUT, DELETE) si responde 502, 503 o 504 mientras despierta o se redespliega [9.7]
 - [x] fix(tracks): la subida de una pista reintenta hasta 5 veces con una espera que crece (5, 10, 15 y 20 s), para sobrevivir al reinicio del motor [9.8]
 - [x] docs(user): guía de una página para el DJ (subir, mezclar, grabar, revisar y qué hacer si algo falla) [11.7]
+- [x] chore(deploy): `scripts/verificar-nube.ps1`, que despierta los servidores y comprueba API, login, motor y biblioteca antes de una sesión; los avisos pasan a «hasta tres minutos» (medido: el API tarda ~135 s en despertar) [11.11]
