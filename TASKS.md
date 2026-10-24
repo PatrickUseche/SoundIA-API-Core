@@ -54,3 +54,10 @@ Encontrado al probar el sistema completo en un navegador real (2026-10-22); nada
 - [x] chore(deploy): encender `SOUNDIA_AUTH_ENABLED` con una contraseña larga y una clave de firma aleatoria de 32 o más caracteres, y poner `soundia.cors.allowed-origins` en el dominio real del front [7.1]
 - [x] chore(deploy): detrás de un proxy inverso el límite de intentos de login ve la dirección del proxy y todos los clientes comparten el contador: configurar las cabeceras reenviadas de confianza (`server.forward-headers-strategy`) o limitarlo en el proxy [7.2]
 - [x] chore(deploy): el motor de IA (Django) no tiene autenticación: dejarlo solo en la red interna, sin puerto publicado, de modo que únicamente este API lo alcance [7.3]
+
+## Fase 9 — Nube gratuita sin tarjeta (en curso)
+
+Arquitectura acordada con el usuario (2026-10-24): Angular en Cloudflare Pages, este API y Django en Render (gratis, se duermen y su disco se borra), base de datos en Neon (Postgres) y audios de Django en Supabase Storage (S3). Nada de esto se ha probado contra las plataformas reales.
+
+- [x] feat(security): enviar al motor de IA la clave compartida `SOUNDIA_IA_ENGINE_KEY` (cabecera `X-Soundia-Key`) [9.1]
+- [x] chore(deploy): `render.yaml`, escuchar en `$PORT` y limitar la memoria de la JVM para 512 MB; PostgreSQL de Neon con `DB_URL` [9.2]

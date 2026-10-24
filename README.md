@@ -34,6 +34,7 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `SOUNDIA_AUTH_JWT_SECRET` | — (obligatoria si está encendida) | Clave con la que se firman los tokens: al menos 32 caracteres, aleatoria y secreta |
 | `soundia.auth.token-ttl` | `8h` | Vida del token de acceso |
 | `soundia.auth.stream-ticket-ttl` | `30s` | Vida del ticket para abrir el stream en vivo |
+| `SOUNDIA_IA_ENGINE_KEY` | vacía | Clave que se envía al motor de IA en la cabecera `X-Soundia-Key`; debe ser igual a `SERVICE_TOKEN` de Django. Solo hace falta si el motor es accesible desde Internet (nube gratuita) |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `none` | Detrás de un proxy inverso, ponlo en `framework` para que el límite de login vea la IP real; no lo uses si el puerto 8080 queda publicado |
 | `soundia.auth.max-login-attempts` / `login-window` | `5` / `1m` | Intentos fallidos por dirección antes de bloquear con 429 |
 
@@ -102,6 +103,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Flujo: Internet → Caddy (HTTPS) → nginx (frontend y `/api`) → este API → Django / PostgreSQL. El análisis de voz (Demucs)
 va apagado en producción porque gasta ~800 MB de RAM por análisis.
+
+### Nube gratuita (Render)
+
+`render.yaml` crea este API en Render (plan gratuito, sin tarjeta) desde «New > Blueprint». Usa PostgreSQL de Neon
+(`DB_URL=jdbc:postgresql://HOST/BASE?sslmode=require`), habla con el motor de IA por su URL pública con la clave
+`SOUNDIA_IA_ENGINE_KEY` y limita la JVM a 300 MB. Con el plan gratuito el servicio se duerme tras 15 minutos sin tráfico
+y la primera petición tarda cerca de un minuto, por eso los timeouts hacia el motor son de 90 s. Escucha en `$PORT`.
 
 > **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
 > Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno

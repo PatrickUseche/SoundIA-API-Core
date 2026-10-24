@@ -28,4 +28,5 @@ USER soundia
 
 EXPOSE 8080
 # DB_PASSWORD es obligatoria; el resto de la configuracion se pasa con variables de entorno (ver README).
+# Para poca memoria (512 MB) se puede limitar la JVM con JAVA_TOOL_OPTIONS (ver render.yaml).
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
