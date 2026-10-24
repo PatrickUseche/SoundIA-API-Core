@@ -166,6 +166,10 @@ este API solo reenvía y devuelve el JSON sin tocarlo.
 | `PUT` | `/{id}` | `{genre}`: el género de la pista (merengue, bachata, salsa...), dato de contexto para aprender el estilo del DJ. Vacío lo quita; máximo 40 caracteres (400 si falta o es más largo). El motor lo guarda en minúsculas. Devuelve la pista. |
 | `PUT` | `/{id}/grid` | `{downbeat}` (segundos, número ≥ 0). El DJ señala un «1» del compás cuando la detección automática no se puede fiar (reggaetón): el motor de IA lo ajusta al pulso más cercano y lo guarda como primer tiempo, con `grid.confidence` 1 y `grid.manual` verdadero. Devuelve la pista. 400 si el valor no es válido, 404 si la pista no existe, 409 si no tiene rejilla de pulsos. |
 
+Las consultas al motor que fallan porque se está despertando o reiniciando (502, 503, 504 o conexión cortada) se reintentan hasta 4 veces,
+esperando 4, 8 y 12 s; solo las idempotentes (GET, PUT, DELETE), porque repetir un POST podría duplicar algo (la subida de una
+pista tiene su propio reintento).
+
 Los errores 400, 404, 413 y 422 del motor de IA se devuelven **con su código y su mensaje** (por ejemplo, 422 «El audio es
 silencio»); cualquier otro fallo del motor se muestra como un 502 genérico. El análisis usa un timeout propio
 (`soundia.ia-engine.analysis-timeout`, 120 s por defecto).

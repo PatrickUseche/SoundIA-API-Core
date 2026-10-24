@@ -24,6 +24,10 @@ class RestClientConfigTests {
             new ApplicationContextRunner().withUserConfiguration(RestClientConfig.class);
 
     private HttpServer server;
+    private final java.util.concurrent.atomic.AtomicInteger peticiones = new java.util.concurrent.atomic.AtomicInteger();
+    private final java.util.concurrent.atomic.AtomicInteger fallosPendientes = new java.util.concurrent.atomic.AtomicInteger();
+    private final java.util.List<String> metodos = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile int statusDeFallo = 502;
 
     @BeforeEach
     void startServer() throws IOException {
@@ -32,6 +36,18 @@ class RestClientConfigTests {
             byte[] body = "ok".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.createContext("/inestable", exchange -> {
+            peticiones.incrementAndGet();
+            metodos.add(exchange.getRequestMethod());
+            if (fallosPendientes.getAndDecrement() > 0) {
+                exchange.sendResponseHeaders(statusDeFallo, -1);
+            } else {
+                byte[] body = "ok".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+            }
             exchange.close();
         });
         server.createContext("/clave", exchange -> {
@@ -104,6 +120,99 @@ class RestClientConfigTests {
     private static final IaEngineProperties PROPS =
             new IaEngineProperties("http://localhost", Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(5));
 
+    private RestTemplate conReintentosRapidos() {
+        RestClientConfig config = new RestClientConfig();
+        config.setRetryDelay(Duration.ofMillis(5));
+        return config.iaEngineRestTemplate(PROPS);
+    }
+
+    @Test
+    void unaConsultaQueRecibe502SeReintentaHastaQueElMotorResponde() {
+        fallosPendientes.set(2);
+
+        assertEquals("ok", conReintentosRapidos().getForObject(url("/inestable"), String.class));
+        assertEquals(3, peticiones.get());
+    }
+
+    @Test
+    void con503y504tambienReintenta() {
+        for (int status : new int[] {503, 504}) {
+            peticiones.set(0);
+            fallosPendientes.set(1);
+            statusDeFallo = status;
+
+            assertEquals("ok", conReintentosRapidos().getForObject(url("/inestable"), String.class));
+            assertEquals(2, peticiones.get(), "codigo " + status);
+        }
+    }
+
+    @Test
+    void siElMotorNoSeRecuperaDejaDeReintentarYPropagaElError() {
+        fallosPendientes.set(100);
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class,
+                () -> conReintentosRapidos().getForObject(url("/inestable"), String.class));
+        assertEquals(RestClientConfig.MAX_ATTEMPTS, peticiones.get());
+    }
+
+    @Test
+    void unErrorDelCliente404NoSeReintenta() {
+        fallosPendientes.set(100);
+        statusDeFallo = 404;
+
+        assertThrows(org.springframework.web.client.HttpClientErrorException.class,
+                () -> conReintentosRapidos().getForObject(url("/inestable"), String.class));
+        assertEquals(1, peticiones.get());
+    }
+
+    @Test
+    void unPostNoSeReintentaPorqueRepetirloPodriaDuplicarAlgo() {
+        fallosPendientes.set(1);
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class,
+                () -> conReintentosRapidos().postForObject(url("/inestable"), "x", String.class));
+        assertEquals(1, peticiones.get());
+        assertEquals(java.util.List.of("POST"), metodos);
+    }
+
+    @Test
+    void unPutYUnDeleteSiSeReintentan() {
+        fallosPendientes.set(1);
+        conReintentosRapidos().put(url("/inestable"), "x");
+        assertEquals(java.util.List.of("PUT", "PUT"), metodos);
+
+        metodos.clear();
+        fallosPendientes.set(1);
+        conReintentosRapidos().delete(url("/inestable"));
+        assertEquals(java.util.List.of("DELETE", "DELETE"), metodos);
+    }
+
+    @Test
+    void elReintentoSigueMandandoLaClaveDeServicio() {
+        RestClientConfig config = new RestClientConfig();
+        config.setRetryDelay(Duration.ofMillis(5));
+        config.setIaEngineKey("clave-larga");
+        fallosPendientes.set(1);
+        // La ruta /clave devuelve la cabecera que recibe: tras un fallo sigue llegando.
+        server.removeContext("/inestable");
+        java.util.concurrent.atomic.AtomicInteger intentos = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.List<String> claves = new java.util.concurrent.CopyOnWriteArrayList<>();
+        server.createContext("/inestable", exchange -> {
+            claves.add(String.valueOf(exchange.getRequestHeaders().getFirst("X-Soundia-Key")));
+            if (intentos.getAndIncrement() == 0) {
+                exchange.sendResponseHeaders(502, -1);
+            } else {
+                byte[] body = "ok".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+            }
+            exchange.close();
+        });
+
+        assertEquals("ok", config.iaEngineRestTemplate(PROPS).getForObject(url("/inestable"), String.class));
+        assertEquals(java.util.List.of("clave-larga", "clave-larga"), claves);
+    }
+
     @Test
     void sinClaveConfiguradaNoEnviaLaCabecera() {
         assertEquals("null", new RestClientConfig().iaEngineRestTemplate(PROPS).getForObject(url("/clave"), String.class));
@@ -152,6 +261,7 @@ class RestClientConfigTests {
         IaEngineProperties props = new IaEngineProperties(
                 "http://localhost", Duration.ofSeconds(1), Duration.ofMillis(300), Duration.ofSeconds(5));
         RestClientConfig config = new RestClientConfig();
+        config.setRetryDelay(Duration.ofMillis(5)); // el servidor cierra sin responder: se reintenta, pero sin esperar de verdad
 
         assertThrows(ResourceAccessException.class,
                 () -> config.iaEngineRestTemplate(props).getForObject(url("/lento"), String.class));
