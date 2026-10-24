@@ -34,6 +34,7 @@ Copia `.env.example` a `.env` (está en `.gitignore`) y ajusta los valores, o de
 | `SOUNDIA_AUTH_JWT_SECRET` | — (obligatoria si está encendida) | Clave con la que se firman los tokens: al menos 32 caracteres, aleatoria y secreta |
 | `soundia.auth.token-ttl` | `8h` | Vida del token de acceso |
 | `soundia.auth.stream-ticket-ttl` | `30s` | Vida del ticket para abrir el stream en vivo |
+| `SOUNDIA_IA_ENGINE_KEY` | vacía | Clave que se envía al motor de IA en la cabecera `X-Soundia-Key`; debe ser igual a `SERVICE_TOKEN` de Django. Solo hace falta si el motor es accesible desde Internet (nube gratuita) |
 | `SERVER_FORWARD_HEADERS_STRATEGY` | `none` | Detrás de un proxy inverso, ponlo en `framework` para que el límite de login vea la IP real; no lo uses si el puerto 8080 queda publicado |
 | `soundia.auth.max-login-attempts` / `login-window` | `5` / `1m` | Intentos fallidos por dirección antes de bloquear con 429 |
 

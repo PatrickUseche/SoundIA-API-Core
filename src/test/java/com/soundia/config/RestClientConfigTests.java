@@ -34,6 +34,13 @@ class RestClientConfigTests {
             exchange.getResponseBody().write(body);
             exchange.close();
         });
+        server.createContext("/clave", exchange -> {
+            String recibida = exchange.getRequestHeaders().getFirst("X-Soundia-Key");
+            byte[] body = String.valueOf(recibida).getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
         server.createContext("/lento", exchange -> {
             try {
                 Thread.sleep(1500);
@@ -92,6 +99,31 @@ class RestClientConfigTests {
         contextRunner.withPropertyValues("soundia.ia-engine.base-url=http://ia.interno:9000/")
                 .run(context -> assertEquals("http://ia.interno:9000/api/mix/calculate",
                         context.getBean(IaEngineProperties.class).mixCalculateUrl()));
+    }
+
+    private static final IaEngineProperties PROPS =
+            new IaEngineProperties("http://localhost", Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(5));
+
+    @Test
+    void sinClaveConfiguradaNoEnviaLaCabecera() {
+        assertEquals("null", new RestClientConfig().iaEngineRestTemplate(PROPS).getForObject(url("/clave"), String.class));
+    }
+
+    @Test
+    void conClaveConfiguradaLaEnviaEnLaCabeceraDeAmbosRestTemplates() {
+        RestClientConfig config = new RestClientConfig();
+        config.setIaEngineKey("  clave-larga ");
+
+        assertEquals("clave-larga", config.iaEngineRestTemplate(PROPS).getForObject(url("/clave"), String.class));
+        assertEquals("clave-larga", config.iaEngineAnalysisRestTemplate(PROPS).getForObject(url("/clave"), String.class));
+    }
+
+    @Test
+    void unaClaveEnBlancoNoEnviaLaCabecera() {
+        RestClientConfig config = new RestClientConfig();
+        config.setIaEngineKey("   ");
+
+        assertEquals("null", config.iaEngineRestTemplate(PROPS).getForObject(url("/clave"), String.class));
     }
 
     @Test
