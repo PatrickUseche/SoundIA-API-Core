@@ -51,6 +51,6 @@ Al terminarla se marca `[x]` en ese mismo commit. Las fases se pueden hacer en o
 
 Encontrado al probar el sistema completo en un navegador real (2026-10-22); nada de esto se ha hecho todavía.
 
-- [ ] chore(deploy): encender `SOUNDIA_AUTH_ENABLED` con una contraseña larga y una clave de firma aleatoria de 32 o más caracteres, y poner `soundia.cors.allowed-origins` en el dominio real del front [7.1]
+- [x] chore(deploy): encender `SOUNDIA_AUTH_ENABLED` con una contraseña larga y una clave de firma aleatoria de 32 o más caracteres, y poner `soundia.cors.allowed-origins` en el dominio real del front [7.1]
 - [x] chore(deploy): detrás de un proxy inverso el límite de intentos de login ve la dirección del proxy y todos los clientes comparten el contador: configurar las cabeceras reenviadas de confianza (`server.forward-headers-strategy`) o limitarlo en el proxy [7.2]
-- [ ] chore(deploy): el motor de IA (Django) no tiene autenticación: dejarlo solo en la red interna, sin puerto publicado, de modo que únicamente este API lo alcance [7.3]
+- [x] chore(deploy): el motor de IA (Django) no tiene autenticación: dejarlo solo en la red interna, sin puerto publicado, de modo que únicamente este API lo alcance [7.3]

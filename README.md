@@ -89,6 +89,20 @@ docker compose up --build
 Frontend en http://localhost:4200 y API en http://localhost:8080. La base de datos y los audios guardados viven en
 volúmenes (`db-data`, `ia-data`).
 
+### Producción
+
+`docker-compose.prod.yml` es la versión para un VPS: solo **Caddy** publica puertos (80 y 443) y saca el certificado HTTPS
+solo; el login va siempre encendido y el motor de IA y el API no tienen puertos publicados. Necesitas un dominio con un
+registro DNS A hacia el servidor y, en el `.env`, `DOMAIN`, `DB_PASSWORD`, `DJANGO_SECRET_KEY` y las tres variables
+`SOUNDIA_AUTH_*` (sin ellas no arranca):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Flujo: Internet → Caddy (HTTPS) → nginx (frontend y `/api`) → este API → Django / PostgreSQL. El análisis de voz (Demucs)
+va apagado en producción porque gasta ~800 MB de RAM por análisis.
+
 > **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
 > Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno
 > (`SOUNDIA_IA_ENGINE_BASE_URL`, `SOUNDIA_CORS_ALLOWED_ORIGINS`, `DB_*`). Si algo falla al construir, empezar por las imágenes base.

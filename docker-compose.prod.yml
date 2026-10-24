@@ -1,0 +1,92 @@
+# SoundIA en produccion (un VPS con Docker): solo Caddy publica puertos (80 y 443, con HTTPS automatico).
+#
+#   Internet -> caddy (HTTPS) -> web (nginx: Angular + /api) -> api (Spring Boot) -> ia-engine (Django) / db (PostgreSQL)
+#
+# Requisitos:
+#   - Los tres repositorios clonados uno junto a otro (igual que en docker-compose.yml).
+#   - Un archivo .env en esta carpeta (ver .env.example, bloque "Produccion"). Sin sus variables obligatorias, no arranca.
+#   - Un dominio con registro DNS A hacia el servidor y los puertos 80 y 443 abiertos.
+#
+# Uso:  docker compose -f docker-compose.prod.yml up -d --build
+#
+# NOTA: este archivo no se pudo probar al escribirlo (la maquina de desarrollo no tiene Docker).
+
+name: soundia
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: soundia_db
+      POSTGRES_USER: soundia_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soundia_user -d soundia_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # El motor de IA no tiene autenticacion: sin puertos publicados, solo el API lo alcanza por la red interna.
+  ia-engine:
+    build: ../../Soundia-IA-Engine
+    restart: unless-stopped
+    environment:
+      DJANGO_DEBUG: "False"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Define DJANGO_SECRET_KEY en el archivo .env}
+      DJANGO_ALLOWED_HOSTS: ia-engine
+      # Demucs (separacion de voz) usa ~800 MB de RAM por analisis: apagado en el MVP.
+      VOCAL_ANALYSIS: "off"
+    volumes:
+      - ia-data:/data
+
+  # Sin puertos publicados: el navegador entra por Caddy -> nginx -> /api. Por eso las cabeceras X-Forwarded-* son de confianza.
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ia-engine:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/soundia_db
+      DB_USERNAME: soundia_user
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+      SOUNDIA_IA_ENGINE_BASE_URL: http://ia-engine:8000
+      SOUNDIA_CORS_ALLOWED_ORIGINS: https://${DOMAIN:?Define DOMAIN en el archivo .env}
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      # Login siempre encendido en produccion; sin las tres variables la aplicacion no arranca.
+      SOUNDIA_AUTH_ENABLED: "true"
+      SOUNDIA_AUTH_USERNAME: ${SOUNDIA_AUTH_USERNAME:?Define SOUNDIA_AUTH_USERNAME en el archivo .env}
+      SOUNDIA_AUTH_PASSWORD: ${SOUNDIA_AUTH_PASSWORD:?Define SOUNDIA_AUTH_PASSWORD en el archivo .env}
+      SOUNDIA_AUTH_JWT_SECRET: ${SOUNDIA_AUTH_JWT_SECRET:?Define SOUNDIA_AUTH_JWT_SECRET en el archivo .env}
+
+  web:
+    build: ../../SoundIA-Web-DJ
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:?Define DOMAIN en el archivo .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  ia-data:
+  caddy-data:
+  caddy-config:
