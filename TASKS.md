@@ -61,3 +61,4 @@ Arquitectura acordada con el usuario (2026-10-24): Angular en Cloudflare Pages, 
 
 - [x] feat(security): enviar al motor de IA la clave compartida `SOUNDIA_IA_ENGINE_KEY` (cabecera `X-Soundia-Key`) [9.1]
 - [x] chore(deploy): `render.yaml`, escuchar en `$PORT` y limitar la memoria de la JVM para 512 MB; PostgreSQL de Neon con `DB_URL` [9.2]
+- [x] docs(deploy): guía paso a paso de la nube gratuita (Neon, Supabase, Render, Cloudflare Pages) [9.3]
