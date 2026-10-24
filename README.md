@@ -106,6 +106,8 @@ va apagado en producción porque gasta ~800 MB de RAM por análisis.
 
 ### Nube gratuita (Render)
 
+Antes de ir a tocar, `scripts/verificar-nube.ps1 -Api <url del API> -Usuario dj` despierta los servidores y comprueba toda la cadena (API, login, motor, biblioteca) sin cambiar nada.
+
 Para quien va a mezclar: [docs/GUIA-DEL-DJ.md](docs/GUIA-DEL-DJ.md), una guía de una página con el flujo (subir canciones, mezclar, grabar, revisar) y qué hacer si algo se queda esperando.
 
 Guía completa, paso a paso, en [docs/DESPLIEGUE-NUBE-GRATUITA.md](docs/DESPLIEGUE-NUBE-GRATUITA.md).

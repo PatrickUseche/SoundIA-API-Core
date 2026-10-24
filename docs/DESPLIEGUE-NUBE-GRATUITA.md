@@ -94,7 +94,7 @@ barra final. Guarda; Render reinicia el servicio.
 
 ## 7. Probar
 
-1. Abre las URLs del motor y del API para despertarlos (espera hasta un minuto).
+1. Abre las URLs del motor y del API para despertarlos (espera hasta tres minutos: el API tarda unos 2 en arrancar y el motor, menos de 1).
 2. Abre la dirección de Pages, entra con el usuario y la contraseña y sube una pista de 3 a 5 minutos.
 3. Comprueba que la pista aparece analizada, que suena en el deck y que sigue ahí tras reiniciar el motor (Render >
    Manual Deploy). Si desaparece, el audio no está yendo a Supabase.

@@ -5,8 +5,12 @@ Esta guía es para quien va a mezclar con SoundIA y, de paso, enseñarle su esti
 ## Antes de empezar (5 minutos, mejor en casa)
 
 1. **Abre la dirección de la aplicación** en Chrome o Edge (en el portátil). Entra con el usuario y la contraseña que te dieron.
-2. **Espera a ver «Servidores listos»** arriba a la derecha. Si lleva un rato sin usarse, los servidores están dormidos y pueden tardar hasta uno o dos minutos en despertar: aparece un aviso amarillo. **No cierres la página.**
+2. **Espera a ver «Servidores listos»** arriba a la derecha. Si lleva un rato sin usarse, los servidores están dormidos y pueden tardar hasta tres minutos en despertar: aparece un aviso amarillo. **No cierres la página.**
 3. **Sube tus canciones de la sesión** (ver abajo) antes de ir a tocar. Subirlas delante del público es mala idea: cada una tarda unos segundos.
+
+### Comprobar que todo está listo (opcional, recomendable)
+
+Quien administra SoundIA puede ejecutar `scripts/verificar-nube.ps1` en PowerShell: despierta los servidores y comprueba en un minuto el API, el login, el motor de IA y la biblioteca. Si dice «Todo listo», se puede ir a tocar.
 
 ## 1. Subir canciones
 
@@ -43,7 +47,7 @@ En **Grabaciones** (menú de arriba) verás cada mezcla. Márcala **Buena** o **
 
 | Lo que ves | Qué hacer |
 |---|---|
-| Aviso amarillo «Esto está tardando más de lo normal» | Los servidores despiertan. Espera hasta 2 minutos. No recargues. |
+| Aviso amarillo «Esto está tardando más de lo normal» | Los servidores despiertan. Espera hasta 3 minutos. No recargues. |
 | «Sin respuesta del servidor» | Espera un minuto; la app reintenta sola. Si sigue, recarga la página. |
 | «N mezclas esperan a guardarse» | Normal si el servidor estaba dormido. Se guardan solas; no cierres la página. |
 | Una canción no se analiza | Mira el motivo en rojo. Suele ser un formato raro o un archivo muy grande. |
