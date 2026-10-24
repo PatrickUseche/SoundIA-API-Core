@@ -56,6 +56,11 @@ public class TrackClient {
         return restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class);
     }
 
+    /** Borra la pista y su audio en el motor de IA. Si no existe, el motor responde 404 y llega al cliente. */
+    public void deleteTrack(long id) {
+        restTemplate.delete(properties.audioUrl("tracks/" + id));
+    }
+
     /**
      * El DJ senala un instante (segundos) que es un "1" del compas: Django lo ajusta al pulso mas cercano de la
      * rejilla y lo guarda como primer tiempo. Devuelve la pista actualizada (JSON).

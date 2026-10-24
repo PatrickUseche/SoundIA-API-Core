@@ -65,6 +65,12 @@ public class QueueService {
         repository.delete(item);
     }
 
+    /** Quita de todas las colas una pista que se acaba de borrar, para que no queden pistas que ya no existen. */
+    @Transactional
+    public void removeTrack(Long trackId) {
+        repository.deleteByTrackId(trackId);
+    }
+
     /** Saca de la cola la pista que toca reproducir y la devuelve. */
     @Transactional
     public QueueItem pollNext(Long sessionId) {

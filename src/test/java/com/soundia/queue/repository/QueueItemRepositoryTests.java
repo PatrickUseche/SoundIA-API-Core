@@ -40,6 +40,19 @@ class QueueItemRepositoryTests {
     }
 
     @Test
+    void borrarPorPistaLaQuitaDeTodasLasColasYNoTocaLasDemas() {
+        agregar(1, 10);
+        agregar(1, 20);
+        agregar(2, 10);
+
+        repository.deleteByTrackId(10L);
+        repository.flush();
+
+        assertEquals(List.of(20L), repository.findBySessionIdOrderByIdAsc(1L).stream().map(QueueItem::getTrackId).toList());
+        assertTrue(repository.findBySessionIdOrderByIdAsc(2L).isEmpty());
+    }
+
+    @Test
     void cadaSesionTieneSuPropiaCola() {
         agregar(1, 10);
         agregar(2, 20);

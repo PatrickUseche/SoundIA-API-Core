@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.soundia.config.BadRequestException;
+import com.soundia.queue.service.QueueService;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -27,9 +29,11 @@ import jakarta.validation.constraints.NotNull;
 public class TrackController {
 
     private final TrackClient tracks;
+    private final QueueService queues;
 
-    public TrackController(TrackClient tracks) {
+    public TrackController(TrackClient tracks, QueueService queues) {
         this.tracks = tracks;
+        this.queues = queues;
     }
 
     /** Sube un archivo de audio para analizarlo (BPM, tonalidad, energia y puntos de mezcla) y guardarlo. */
@@ -53,6 +57,17 @@ public class TrackController {
     @GetMapping("/{id}")
     public ResponseEntity<String> get(@PathVariable long id) {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(tracks.getTrack(id));
+    }
+
+    /**
+     * Borra la pista y su audio (en el motor de IA) y la quita de las colas. Las grabaciones de mezclas que la usaron se
+     * conservan. Si el motor falla, la pista y las colas quedan como estaban.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable long id) {
+        tracks.deleteTrack(id);
+        queues.removeTrack(id);
+        return ResponseEntity.noContent().build();
     }
 
     /** Cuerpo de PUT /{id}/grid: el segundo de la pista que el DJ senala como un primer tiempo. */
