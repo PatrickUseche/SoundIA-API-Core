@@ -1,6 +1,7 @@
 package com.soundia.track;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -246,6 +247,45 @@ class TrackControllerTests {
 
         mockMvc.perform(put("/api/v1/tracks/99/grid").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"downbeat\":4.6}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void poneElGeneroDeUnaPista() throws Exception {
+        when(tracks.setGenre(7, "salsa")).thenReturn("{\"id\":7,\"genre\":\"salsa\"}");
+
+        mockMvc.perform(put("/api/v1/tracks/7").contentType(MediaType.APPLICATION_JSON).content("{\"genre\":\"salsa\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.genre").value("salsa"));
+    }
+
+    @Test
+    void unGeneroVacioSePermiteParaQuitarlo() throws Exception {
+        when(tracks.setGenre(7, "")).thenReturn("{\"id\":7,\"genre\":\"\"}");
+
+        mockMvc.perform(put("/api/v1/tracks/7").contentType(MediaType.APPLICATION_JSON).content("{\"genre\":\"\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void sinGeneroOConUnoDemasiadoLargoDevuelve400SinLlamarAlMotor() throws Exception {
+        mockMvc.perform(put("/api/v1/tracks/7").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/v1/tracks/7").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"genre\":\"" + "x".repeat(41) + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(tracks, never()).setGenre(anyLong(), any());
+    }
+
+    @Test
+    void siLaPistaNoExisteDevuelve404() throws Exception {
+        when(tracks.setGenre(99, "salsa")).thenThrow(HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", new org.springframework.http.HttpHeaders(),
+                "{\"error\":\"Pista no encontrada\"}".getBytes(), java.nio.charset.StandardCharsets.UTF_8));
+
+        mockMvc.perform(put("/api/v1/tracks/99").contentType(MediaType.APPLICATION_JSON).content("{\"genre\":\"salsa\"}"))
                 .andExpect(status().isNotFound());
     }
 
