@@ -253,6 +253,26 @@ class TrackClientTests {
     }
 
     @Test
+    void poneElGeneroConUnPutYDevuelveLaPistaSinTocar() {
+        String resultado = client().setGenre(7, "salsa");
+
+        assertEquals(PISTA, resultado);
+        assertEquals("PUT", metodo.get());
+        assertEquals("/api/audio/tracks/7", ruta.get());
+        assertEquals("{\"genre\":\"salsa\"}", cuerpo.get());
+    }
+
+    @Test
+    void siDjangoRechazaElGeneroPropagaElError() {
+        status = 400;
+        respuesta = "{\"error\":\"'genre' no puede pasar de 40 caracteres.\"}";
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class, () -> client().setGenre(7, "x"));
+
+        assertEquals(400, e.getStatusCode().value());
+    }
+
+    @Test
     void borraLaPistaConUnDelete() {
         status = 204;
         respuesta = "";

@@ -127,6 +127,12 @@ public class TrackClient {
         return restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class);
     }
 
+    /** Cambia el genero de la pista (`{"genre": "salsa"}`); devuelve la pista actualizada (JSON). */
+    public String setGenre(long id, String genre) {
+        return restTemplate.exchange(properties.audioUrl("tracks/" + id), HttpMethod.PUT,
+                new HttpEntity<>(Map.of("genre", genre)), String.class).getBody();
+    }
+
     /** Borra la pista y su audio en el motor de IA. Si no existe, el motor responde 404 y llega al cliente. */
     public void deleteTrack(long id) {
         restTemplate.delete(properties.audioUrl("tracks/" + id));

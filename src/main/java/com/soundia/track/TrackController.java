@@ -22,6 +22,7 @@ import com.soundia.queue.service.QueueService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /** Biblioteca de pistas. Los datos viven en el motor de IA; este controlador es solo la pasarela. */
 @RestController
@@ -68,6 +69,16 @@ public class TrackController {
         tracks.deleteTrack(id);
         queues.removeTrack(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Cuerpo de PUT /{id}: el genero de la pista (merengue, bachata, salsa...); vacio lo quita. */
+    public record GenreRequest(@NotNull @Size(max = 40) String genre) {
+    }
+
+    /** Pone el genero de una pista, un dato de contexto para aprender el estilo del DJ. El motor lo normaliza. */
+    @PutMapping("/{id}")
+    public ResponseEntity<String> setGenre(@PathVariable long id, @Valid @RequestBody GenreRequest request) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(tracks.setGenre(id, request.genre()));
     }
 
     /** Cuerpo de PUT /{id}/grid: el segundo de la pista que el DJ senala como un primer tiempo. */
