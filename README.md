@@ -106,6 +106,8 @@ va apagado en producción porque gasta ~800 MB de RAM por análisis.
 
 ### Nube gratuita (Render)
 
+Guía completa, paso a paso, en [docs/DESPLIEGUE-NUBE-GRATUITA.md](docs/DESPLIEGUE-NUBE-GRATUITA.md).
+
 `render.yaml` crea este API en Render (plan gratuito, sin tarjeta) desde «New > Blueprint». Usa PostgreSQL de Neon
 (`DB_URL=jdbc:postgresql://HOST/BASE?sslmode=require`), habla con el motor de IA por su URL pública con la clave
 `SOUNDIA_IA_ENGINE_KEY` y limita la JVM a 300 MB. Con el plan gratuito el servicio se duerme tras 15 minutos sin tráfico
