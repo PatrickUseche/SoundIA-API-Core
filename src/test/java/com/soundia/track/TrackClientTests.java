@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +36,10 @@ class TrackClientTests {
     private final AtomicReference<String> contentLength = new AtomicReference<>();
     private final AtomicReference<String> transferEncoding = new AtomicReference<>();
     private final AtomicReference<String> cuerpo = new AtomicReference<>();
+    private final AtomicInteger peticionesPost = new AtomicInteger();
+    /** Cuantos POST seguidos responde con este codigo antes de responder con normalidad. */
+    private volatile int fallosPrevios = 0;
+    private volatile int statusDeFallo = 502;
     private volatile int status = 200;
     private volatile String respuesta = PISTA;
     private volatile byte[] audioDeRespuesta = null;
@@ -50,6 +55,11 @@ class TrackClientTests {
             contentLength.set(exchange.getRequestHeaders().getFirst("Content-Length"));
             transferEncoding.set(exchange.getRequestHeaders().getFirst("Transfer-Encoding"));
             cuerpo.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.ISO_8859_1));
+            if ("POST".equals(exchange.getRequestMethod()) && peticionesPost.incrementAndGet() <= fallosPrevios) {
+                exchange.sendResponseHeaders(statusDeFallo, -1);
+                exchange.close();
+                return;
+            }
             responder(exchange);
         });
         server.start();
@@ -73,7 +83,9 @@ class TrackClientTests {
                 "http://localhost:" + server.getAddress().getPort(),
                 Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(5));
         RestClientConfig config = new RestClientConfig();
-        return new TrackClient(config.iaEngineAnalysisRestTemplate(props), config.iaEngineRestTemplate(props), props);
+        TrackClient client = new TrackClient(config.iaEngineAnalysisRestTemplate(props), config.iaEngineRestTemplate(props), props);
+        client.setRetryDelay(Duration.ofMillis(10));
+        return client;
     }
 
     @Test
@@ -87,6 +99,54 @@ class TrackClientTests {
         assertEquals("/api/audio/analyze", ruta.get());
         assertTrue(contentType.get().startsWith("multipart/form-data"), contentType.get());
         assertTrue(contentType.get().contains("boundary="), contentType.get());
+    }
+
+    @Test
+    void antesDeSubirElAudioDespiertaAlMotorConUnaConsultaLigera() {
+        client().analyze("tema.wav", "Mi tema", "RIFFdatos".getBytes(StandardCharsets.ISO_8859_1));
+
+        assertEquals(1, peticionesPost.get());
+        assertEquals("POST", metodo.get());
+        assertEquals("/api/audio/analyze", ruta.get());
+    }
+
+    @Test
+    void siElMotorDespiertaDevolviendo502ReintentaYAlFinalAnaliza() {
+        fallosPrevios = 2;
+
+        String resultado = client().analyze("tema.wav", "Mi tema", "RIFFdatos".getBytes(StandardCharsets.ISO_8859_1));
+
+        assertEquals(PISTA, resultado);
+        assertEquals(3, peticionesPost.get());
+    }
+
+    @Test
+    void conUn503TambienReintenta() {
+        fallosPrevios = 1;
+        statusDeFallo = 503;
+
+        assertEquals(PISTA, client().analyze("tema.wav", null, new byte[] {1}));
+        assertEquals(2, peticionesPost.get());
+    }
+
+    @Test
+    void sinoSeRecuperaDejaDeReintentarAlTercerIntentoYPropagaElError() {
+        fallosPrevios = 10;
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class,
+                () -> client().analyze("tema.wav", null, new byte[] {1}));
+
+        assertEquals(TrackClient.MAX_ANALYZE_ATTEMPTS, peticionesPost.get());
+    }
+
+    @Test
+    void unErrorDelAnalisisNoSeReintenta() {
+        fallosPrevios = 10;
+        statusDeFallo = 422;
+
+        assertThrows(HttpClientErrorException.class, () -> client().analyze("silencio.wav", null, new byte[] {1}));
+
+        assertEquals(1, peticionesPost.get());
     }
 
     @Test
