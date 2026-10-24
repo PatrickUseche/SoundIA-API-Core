@@ -33,7 +33,8 @@ public class RestClientConfig {
     // Espera tras el primer fallo; crece en cada intento: con 4 s son 4, 8 y 12 s (24 s en total).
     private Duration retryDelay = Duration.ofSeconds(4);
 
-    void setRetryDelay(Duration retryDelay) {
+    /** Solo para las pruebas de otros paquetes: la espera base entre reintentos de las consultas al motor. */
+    public void setRetryDelay(Duration retryDelay) {
         this.retryDelay = retryDelay;
     }
 

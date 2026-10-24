@@ -83,6 +83,7 @@ class TrackClientTests {
                 "http://localhost:" + server.getAddress().getPort(),
                 Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(5));
         RestClientConfig config = new RestClientConfig();
+        config.setRetryDelay(Duration.ofMillis(10)); // las consultas al motor tambien reintentan: sin esperar de verdad
         TrackClient client = new TrackClient(config.iaEngineAnalysisRestTemplate(props), config.iaEngineRestTemplate(props), props);
         client.setRetryDelay(Duration.ofMillis(10));
         return client;
@@ -118,6 +119,28 @@ class TrackClientTests {
 
         assertEquals(PISTA, resultado);
         assertEquals(3, peticionesPost.get());
+    }
+
+    @Test
+    void siElMotorTardaEnVolverReintentaHastaCincoVecesAntesDeRendirse() {
+        fallosPrevios = 4;
+
+        assertEquals(PISTA, client().analyze("tema.wav", null, new byte[] {1}));
+        assertEquals(5, peticionesPost.get());
+    }
+
+    @Test
+    void laEsperaEntreIntentosCreceParaDarleTiempoAlMotorDeReiniciarse() {
+        fallosPrevios = 3;
+        TrackClient lento = client();
+        lento.setRetryDelay(Duration.ofMillis(60));
+
+        long inicio = System.nanoTime();
+        lento.analyze("tema.wav", null, new byte[] {1});
+        long ms = Duration.ofNanos(System.nanoTime() - inicio).toMillis();
+
+        // Pausas de 60, 120 y 180 ms: unos 360 ms; con una espera fija de 60 ms serian solo 180.
+        assertTrue(ms >= 330, "la espera debio crecer con cada intento, duro " + ms + " ms");
     }
 
     @Test
