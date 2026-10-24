@@ -158,7 +158,7 @@ este API solo reenvía y devuelve el JSON sin tocarlo.
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/analyze` | `multipart/form-data` con `file` (WAV, FLAC, OGG o MP3; máx. 50 MB) y `title` opcional. Devuelve 201 con la pista analizada. Analizar tarda unos segundos. Antes de enviar el audio despierta al motor con una consulta ligera y, si el proxy responde 502, 503 o 504 (motor dormido en la nube gratuita), reintenta hasta 3 veces. |
+| `POST` | `/analyze` | `multipart/form-data` con `file` (WAV, FLAC, OGG o MP3; máx. 50 MB) y `title` opcional. Devuelve 201 con la pista analizada. Analizar tarda unos segundos. Antes de enviar el audio despierta al motor con una consulta ligera y, si el proxy responde 502, 503 o 504 (motor dormido en la nube gratuita), reintenta hasta 5 veces (esperando 5, 10, 15 y 20 s: lo que tarda Render en volver a levantar un motor que se cayó). |
 | `GET` | `/` | Pistas analizadas (las 50 más recientes). |
 | `GET` | `/{id}` | Una pista. |
 | `GET` | `/{id}/audio` | El audio original (con su `Content-Type`), para decodificarlo y reproducirlo en un deck. Se descarga entero (máx. 50 MB). 404 si la pista no tiene audio. |
