@@ -34,8 +34,11 @@ public class TrackClient {
 
     private static final Logger log = LoggerFactory.getLogger(TrackClient.class);
 
-    /** Intentos de subir una pista cuando el motor esta despertando o se reinicia (servicios que se duermen). */
-    static final int MAX_ANALYZE_ATTEMPTS = 3;
+    /**
+     * Intentos de subir una pista cuando el motor esta despertando o se reinicia (servicios que se duermen). Con una
+     * espera que crece (5, 10, 15 y 20 s) cubre los ~50 s que tarda Render en volver a levantar un motor que se cayo.
+     */
+    static final int MAX_ANALYZE_ATTEMPTS = 5;
     private static final Set<Integer> TRANSIENT_STATUSES = Set.of(502, 503, 504);
 
     private final RestTemplate analysisRestTemplate;
@@ -74,7 +77,7 @@ public class TrackClient {
                 }
                 log.warn("El motor de IA no respondio al analizar (intento {} de {}): {}. Se reintenta.",
                         attempt, MAX_ANALYZE_ATTEMPTS, e.getMessage());
-                pause();
+                pause(attempt);
             }
         }
     }
@@ -97,9 +100,10 @@ public class TrackClient {
                 && (e.getCause() instanceof ConnectException || e.getCause() instanceof SocketException);
     }
 
-    private void pause() {
+    /** La espera crece con cada intento (delay, 2 x delay, 3 x delay...): un motor que se reinicia tarda en volver. */
+    private void pause(int attempt) {
         try {
-            Thread.sleep(retryDelay.toMillis());
+            Thread.sleep(retryDelay.multipliedBy(attempt).toMillis());
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new ResourceAccessException("Interrumpido mientras se esperaba al motor de IA");
