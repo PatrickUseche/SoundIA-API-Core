@@ -104,6 +104,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 Flujo: Internet → Caddy (HTTPS) → nginx (frontend y `/api`) → este API → Django / PostgreSQL. El análisis de voz (Demucs)
 va apagado en producción porque gasta ~800 MB de RAM por análisis.
 
+### Nube gratuita (Render)
+
+`render.yaml` crea este API en Render (plan gratuito, sin tarjeta) desde «New > Blueprint». Usa PostgreSQL de Neon
+(`DB_URL=jdbc:postgresql://HOST/BASE?sslmode=require`), habla con el motor de IA por su URL pública con la clave
+`SOUNDIA_IA_ENGINE_KEY` y limita la JVM a 300 MB. Con el plan gratuito el servicio se duerme tras 15 minutos sin tráfico
+y la primera petición tarda cerca de un minuto, por eso los timeouts hacia el motor son de 90 s. Escucha en `$PORT`.
+
 > **Aviso: los Dockerfile y el compose no se han podido construir ni probar** (se escribieron en una máquina sin Docker).
 > Sí se verificó que `./mvnw package` genera un jar ejecutable y los nombres de las variables de entorno
 > (`SOUNDIA_IA_ENGINE_BASE_URL`, `SOUNDIA_CORS_ALLOWED_ORIGINS`, `DB_*`). Si algo falla al construir, empezar por las imágenes base.

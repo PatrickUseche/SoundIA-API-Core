@@ -60,4 +60,4 @@ Encontrado al probar el sistema completo en un navegador real (2026-10-22); nada
 Arquitectura acordada con el usuario (2026-10-24): Angular en Cloudflare Pages, este API y Django en Render (gratis, se duermen y su disco se borra), base de datos en Neon (Postgres) y audios de Django en Supabase Storage (S3). Nada de esto se ha probado contra las plataformas reales.
 
 - [x] feat(security): enviar al motor de IA la clave compartida `SOUNDIA_IA_ENGINE_KEY` (cabecera `X-Soundia-Key`) [9.1]
-- [ ] chore(deploy): `render.yaml`, escuchar en `$PORT` y limitar la memoria de la JVM para 512 MB; PostgreSQL de Neon con `DB_URL` [9.2]
+- [x] chore(deploy): `render.yaml`, escuchar en `$PORT` y limitar la memoria de la JVM para 512 MB; PostgreSQL de Neon con `DB_URL` [9.2]

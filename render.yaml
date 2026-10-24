@@ -1,0 +1,43 @@
+# API Gateway de SoundIA en Render (plan gratuito; no pide tarjeta). Crea el servicio desde "New > Blueprint".
+# El plan gratuito se duerme tras 15 minutos sin trafico (la primera peticion tarda cerca de un minuto) y da 512 MB de
+# RAM. Las variables con `sync: false` se piden al crear el servicio y NO se guardan en este archivo.
+services:
+  - type: web
+    name: soundia-api
+    runtime: docker
+    plan: free
+    envVars:
+      # JVM pequena para 512 MB de RAM.
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx300m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m
+      # Base de datos en Neon: jdbc:postgresql://HOST/BASE?sslmode=require
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Motor de IA (el otro servicio de Render). Al dormirse tarda en despertar: los timeouts son largos a proposito.
+      - key: SOUNDIA_IA_ENGINE_BASE_URL
+        sync: false
+      - key: SOUNDIA_IA_ENGINE_KEY
+        sync: false
+      - key: SOUNDIA_IA_ENGINE_CONNECT_TIMEOUT
+        value: 90s
+      - key: SOUNDIA_IA_ENGINE_READ_TIMEOUT
+        value: 90s
+      - key: SOUNDIA_IA_ENGINE_ANALYSIS_TIMEOUT
+        value: 180s
+      # Dominio del frontend (Cloudflare Pages), con https:// y sin barra final.
+      - key: SOUNDIA_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: framework
+      - key: SOUNDIA_AUTH_ENABLED
+        value: "true"
+      - key: SOUNDIA_AUTH_USERNAME
+        sync: false
+      - key: SOUNDIA_AUTH_PASSWORD
+        sync: false
+      - key: SOUNDIA_AUTH_JWT_SECRET
+        generateValue: true
