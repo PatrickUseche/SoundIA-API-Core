@@ -26,6 +26,9 @@ public class RecordingController {
     /** Una grabacion con todas sus curvas pesa unas decenas de KB; esto corta cuerpos absurdos antes de reenviarlos. */
     static final int MAX_BODY_CHARS = 256 * 1024;
 
+    /** Una copia con muchas grabaciones es mas grande; el motor de IA acepta hasta 2,5 MB. */
+    static final int MAX_IMPORT_CHARS = 2 * 1024 * 1024;
+
     private final RecordingClient recordings;
 
     public RecordingController(RecordingClient recordings) {
@@ -42,6 +45,20 @@ public class RecordingController {
     @GetMapping
     public ResponseEntity<String> list(@RequestParam(value = "quality", required = false) String quality) {
         return json(recordings.list(quality));
+    }
+
+    /** Copia de seguridad: todas las grabaciones en un archivo JSON descargable. */
+    @GetMapping("/export")
+    public ResponseEntity<String> export() {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .header("Content-Disposition", "attachment; filename=\"soundia-grabaciones.json\"")
+                .body(recordings.exportAll());
+    }
+
+    /** Restaura una copia exportada (todo o nada, sin duplicar las que ya estan). Responde `{created, skipped}`. */
+    @PostMapping(path = "/import", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> importBackup(@RequestBody String body) {
+        return json(recordings.importAll(checked(body, MAX_IMPORT_CHARS, "La copia es demasiado grande.")));
     }
 
     @GetMapping("/{id}")
@@ -62,11 +79,15 @@ public class RecordingController {
     }
 
     private static String checked(String body) {
+        return checked(body, MAX_BODY_CHARS, "La grabacion es demasiado grande.");
+    }
+
+    private static String checked(String body, int maxChars, String tooBig) {
         if (body == null || body.isBlank()) {
             throw new BadRequestException("El cuerpo de la peticion esta vacio.");
         }
-        if (body.length() > MAX_BODY_CHARS) {
-            throw new BadRequestException("La grabacion es demasiado grande.");
+        if (body.length() > maxChars) {
+            throw new BadRequestException(tooBig);
         }
         return body;
     }

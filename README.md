@@ -203,6 +203,8 @@ pasarela: los datos y la validación viven en el motor de IA (ver su README para
 | `GET` | `/{id}` | Una grabación con sus curvas y la foto de las pistas. |
 | `PUT` | `/{id}` | `{quality?, notes?}`: la revisión del DJ. |
 | `DELETE` | `/{id}` | La borra (204). |
+| `GET` | `/export` | Copia de seguridad: todas las grabaciones en un JSON descargable (`Content-Disposition: attachment`). |
+| `POST` | `/import` | Restaura una copia exportada (hasta 2 MB). Todo o nada, sin duplicar las que ya están. Responde `{created, skipped}`; 400 con la posición de la grabación inválida. |
 
 ### Flujo en vivo (SSE)
 

@@ -69,3 +69,4 @@ Acordado con el usuario (2026-10-24): el DJ usa la versión de la nube, por sesi
 
 - [x] feat(tracks): `DELETE /api/v1/tracks/{id}`: borrar una pista y su audio, y quitarla de las colas [10.1]
 - [x] fix(tracks): despertar al motor de IA antes de subir una pista y reintentar si responde 502, 503 o 504, porque en la nube gratuita se duerme y el proxy cortaba la subida [9.6]
+- [x] feat(recordings): `GET /api/v1/recordings/export` y `POST /api/v1/recordings/import` (copia de seguridad de las grabaciones) [10.4]

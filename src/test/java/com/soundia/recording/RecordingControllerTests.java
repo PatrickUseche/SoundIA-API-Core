@@ -53,6 +53,71 @@ class RecordingControllerTests {
     }
 
     @Test
+    void exportaLaCopiaComoArchivoDescargable() throws Exception {
+        when(recordings.exportAll()).thenReturn("{\"format\":\"soundia-recordings\",\"recordings\":[]}");
+
+        mockMvc.perform(get("/api/v1/recordings/export"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
+                .andExpect(jsonPath("$.format").value("soundia-recordings"));
+    }
+
+    @Test
+    void exportarNoSeConfundeConLaRutaDeUnaGrabacion() throws Exception {
+        when(recordings.exportAll()).thenReturn("{}");
+
+        mockMvc.perform(get("/api/v1/recordings/export")).andExpect(status().isOk());
+
+        verify(recordings, never()).get(anyLong());
+    }
+
+    @Test
+    void restauraUnaCopiaYDevuelveLoQueDiceElMotor() throws Exception {
+        when(recordings.importAll(CUERPO)).thenReturn("{\"created\":2,\"skipped\":1}");
+
+        mockMvc.perform(post("/api/v1/recordings/import").contentType(MediaType.APPLICATION_JSON).content(CUERPO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.created").value(2))
+                .andExpect(jsonPath("$.skipped").value(1));
+    }
+
+    @Test
+    void unaCopiaGrandePeroRazonableSeReenviaAunqueUnaGrabacionSolaNoPodria() throws Exception {
+        String grande = "{\"x\":\"" + "a".repeat(RecordingController.MAX_BODY_CHARS + 10) + "\"}";
+        when(recordings.importAll(any())).thenReturn("{\"created\":0,\"skipped\":0}");
+
+        mockMvc.perform(post("/api/v1/recordings/import").contentType(MediaType.APPLICATION_JSON).content(grande))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void unaCopiaAbsurdamenteGrandeDevuelve400SinReenviarla() throws Exception {
+        String enorme = "{\"x\":\"" + "a".repeat(RecordingController.MAX_IMPORT_CHARS + 10) + "\"}";
+
+        mockMvc.perform(post("/api/v1/recordings/import").contentType(MediaType.APPLICATION_JSON).content(enorme))
+                .andExpect(status().isBadRequest());
+
+        verify(recordings, never()).importAll(any());
+    }
+
+    @Test
+    void restaurarConCuerpoVacioDevuelve400() throws Exception {
+        mockMvc.perform(post("/api/v1/recordings/import").contentType(MediaType.APPLICATION_JSON).content(" "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void siElMotorRechazaLaCopiaDevuelveSuMensaje() throws Exception {
+        when(recordings.importAll(any())).thenThrow(errorDeDjango(HttpStatus.BAD_REQUEST, "Grabacion 2: mal"));
+
+        mockMvc.perform(post("/api/v1/recordings/import").contentType(MediaType.APPLICATION_JSON).content(CUERPO))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Grabacion 2: mal"));
+    }
+
+    @Test
     void unCuerpoVacioDevuelve400SinLlamarAlMotor() throws Exception {
         mockMvc.perform(post("/api/v1/recordings").contentType(MediaType.APPLICATION_JSON).content("   "))
                 .andExpect(status().isBadRequest());

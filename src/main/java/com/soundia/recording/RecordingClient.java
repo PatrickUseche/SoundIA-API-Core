@@ -51,6 +51,16 @@ public class RecordingClient {
         return send(HttpMethod.PUT, URI.create(properties.mixUrl("recordings/" + id)), json);
     }
 
+    /** Copia de seguridad: todas las grabaciones en un JSON (sin ids de pista). */
+    public String exportAll() {
+        return send(HttpMethod.GET, URI.create(properties.mixUrl("recordings/export")), null);
+    }
+
+    /** Restaura una copia exportada; devuelve `{created, skipped}`. Todo o nada. */
+    public String importAll(String json) {
+        return send(HttpMethod.POST, URI.create(properties.mixUrl("recordings/import")), json);
+    }
+
     public void delete(long id) {
         send(HttpMethod.DELETE, URI.create(properties.mixUrl("recordings/" + id)), null);
     }
