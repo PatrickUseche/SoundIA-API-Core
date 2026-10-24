@@ -1,5 +1,7 @@
 package com.soundia.config;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +27,16 @@ public class RestClientConfig {
         this.iaEngineKey = iaEngineKey;
     }
 
+    /** Intentos de una consulta al motor cuando este se esta despertando (ver TransientRetryInterceptor). */
+    static final int MAX_ATTEMPTS = 4;
+
+    // Espera tras el primer fallo; crece en cada intento: con 4 s son 4, 8 y 12 s (24 s en total).
+    private Duration retryDelay = Duration.ofSeconds(4);
+
+    void setRetryDelay(Duration retryDelay) {
+        this.retryDelay = retryDelay;
+    }
+
     // Con timeouts: sin ellos, un Django colgado bloquearia los hilos del API indefinidamente.
     @Bean
     @Primary
@@ -38,7 +50,7 @@ public class RestClientConfig {
         return create(properties, properties.analysisTimeout());
     }
 
-    private RestTemplate create(IaEngineProperties properties, java.time.Duration readTimeout) {
+    private RestTemplate create(IaEngineProperties properties, Duration readTimeout) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(properties.connectTimeout());
         factory.setReadTimeout(readTimeout);
@@ -53,6 +65,8 @@ public class RestClientConfig {
             };
             restTemplate.getInterceptors().add(addKey);
         }
+        // El ultimo de la cadena: cada reintento vuelve a ejecutar la peticion real, ya con la clave puesta.
+        restTemplate.getInterceptors().add(new TransientRetryInterceptor(MAX_ATTEMPTS, retryDelay));
         return restTemplate;
     }
 }
