@@ -71,6 +71,13 @@ class QueueServiceTests {
     }
 
     @Test
+    void alBorrarUnaPistaLaQuitaDeTodasLasColas() {
+        service.removeTrack(10L);
+
+        verify(repository).deleteByTrackId(10L);
+    }
+
+    @Test
     void agregaLaPistaAlFinalDeLaColaConLaHoraActual() {
         sesionAbierta(5);
 

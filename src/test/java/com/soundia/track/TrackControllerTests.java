@@ -2,9 +2,11 @@ package com.soundia.track;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -23,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import com.soundia.queue.service.QueueService;
 import org.springframework.http.ResponseEntity;
 
 @WebMvcTest(TrackController.class)
@@ -35,6 +39,9 @@ class TrackControllerTests {
 
     @MockitoBean
     private TrackClient tracks;
+
+    @MockitoBean
+    private QueueService queues;
 
     private MockMultipartFile audio(String nombre, byte[] contenido) {
         return new MockMultipartFile("file", nombre, "audio/wav", contenido);
@@ -240,6 +247,39 @@ class TrackControllerTests {
         mockMvc.perform(put("/api/v1/tracks/99/grid").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"downbeat\":4.6}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void borrarUnaPistaDevuelve204YLaQuitaDeLasColas() throws Exception {
+        mockMvc.perform(delete("/api/v1/tracks/7"))
+                .andExpect(status().isNoContent());
+
+        verify(tracks).deleteTrack(7);
+        verify(queues).removeTrack(7L);
+    }
+
+    @Test
+    void borrarUnaPistaInexistenteDevuelve404YNoTocaLasColas() throws Exception {
+        doThrow(HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", new org.springframework.http.HttpHeaders(),
+                "{\"error\":\"Pista no encontrada\"}".getBytes(), java.nio.charset.StandardCharsets.UTF_8))
+                .when(tracks).deleteTrack(99);
+
+        mockMvc.perform(delete("/api/v1/tracks/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Pista no encontrada"));
+
+        verify(queues, never()).removeTrack(any());
+    }
+
+    @Test
+    void siElMotorFallaAlBorrarDevuelve502YConservaLasColas() throws Exception {
+        doThrow(new ResourceAccessException("Connection refused")).when(tracks).deleteTrack(1);
+
+        mockMvc.perform(delete("/api/v1/tracks/1"))
+                .andExpect(status().isBadGateway());
+
+        verify(queues, never()).removeTrack(any());
     }
 
     @Test

@@ -193,6 +193,35 @@ class TrackClientTests {
     }
 
     @Test
+    void borraLaPistaConUnDelete() {
+        status = 204;
+        respuesta = "";
+
+        client().deleteTrack(7);
+
+        assertEquals("DELETE", metodo.get());
+        assertEquals("/api/audio/tracks/7", ruta.get());
+    }
+
+    @Test
+    void siDjangoNoEncuentraLaPistaAlBorrarPropagaElError() {
+        status = 404;
+        respuesta = "{\"error\":\"Pista no encontrada\"}";
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class, () -> client().deleteTrack(99));
+
+        assertEquals(404, e.getStatusCode().value());
+    }
+
+    @Test
+    void siDjangoNoPuedeBorrarElAudioPropagaElErrorDelServidor() {
+        status = 502;
+        respuesta = "{\"error\":\"No se pudo borrar el audio\"}";
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class, () -> client().deleteTrack(7));
+    }
+
+    @Test
     void siDjangoRechazaElPrimerTiempoPropagaElError() {
         status = 409;
         respuesta = "{\"error\":\"La pista no tiene una rejilla de pulsos\"}";

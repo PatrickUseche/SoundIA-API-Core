@@ -18,4 +18,7 @@ public interface QueueItemRepository extends JpaRepository<QueueItem, Long> {
     Optional<QueueItem> findByIdAndSessionId(Long id, Long sessionId);
 
     long countBySessionId(Long sessionId);
+
+    /** Quita de todas las colas una pista que ya no existe. */
+    void deleteByTrackId(Long trackId);
 }

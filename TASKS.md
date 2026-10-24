@@ -62,3 +62,9 @@ Arquitectura acordada con el usuario (2026-10-24): Angular en Cloudflare Pages, 
 - [x] feat(security): enviar al motor de IA la clave compartida `SOUNDIA_IA_ENGINE_KEY` (cabecera `X-Soundia-Key`) [9.1]
 - [x] chore(deploy): `render.yaml`, escuchar en `$PORT` y limitar la memoria de la JVM para 512 MB; PostgreSQL de Neon con `DB_URL` [9.2]
 - [x] docs(deploy): guía paso a paso de la nube gratuita (Neon, Supabase, Render, Cloudflare Pages) [9.3]
+
+## Fase 10 — Aprender desde la nube con el repertorio del DJ (en curso)
+
+Acordado con el usuario (2026-10-24): el DJ usa la versión de la nube, por sesiones (sube las pistas de la sesión, mezcla con el modo aprendizaje y borra las pistas al terminar; las grabaciones se conservan). El almacenamiento gratuito de Supabase es de 1 GB.
+
+- [x] feat(tracks): `DELETE /api/v1/tracks/{id}`: borrar una pista y su audio, y quitarla de las colas [10.1]
