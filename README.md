@@ -241,5 +241,8 @@ es.addEventListener('decision', (e) => console.log('IA', JSON.parse(e.data)));
 - **Strategy**: `QueueOrderStrategy` decide qué pista de la cola toca reproducir (`queue/strategy/`).
   `FifoOrder`, `NewestFirstOrder` y `ShuffleOrder` son intercambiables; `QueueOrders` las resuelve por nombre y
   `QueueService.pollNext` no sabe cuál usa. Una estrategia nueva solo tiene que ser un `@Component`.
+- **Builder**: `DjSessionLog.builder()` arma el registro de un evento MIDI (control y valor obligatorios; acción y
+  sesión opcionales) y `EngineRequestBuilder` arma los cuerpos de las peticiones de `AutoDjClient` al motor,
+  omitiendo los campos opcionales sin valor.
 - `MidiEventService` es el único flujo de un evento: consulta la IA, guarda **un** registro y publica un evento interno.
 - `LiveStreamPublisher` convierte ese evento interno en un mensaje SSE.

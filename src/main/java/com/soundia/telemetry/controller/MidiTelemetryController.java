@@ -31,9 +31,7 @@ public class MidiTelemetryController {
     @PostMapping("/event")
     public ResponseEntity<String> receiveMidiEvent(@Valid @RequestBody DjSessionLogDto dto){
         // Mapeo manual: Transferimos datos DTO seguro a la Entidad de BD.
-        DjSessionLog logEvent = new DjSessionLog();
-        logEvent.setControlId(dto.controlId());
-        logEvent.setValue(dto.value());
+        DjSessionLog logEvent = DjSessionLog.builder().controlId(dto.controlId()).value(dto.value()).build();
         
         // El evento ya validado se procesa de forma asincrona (IA + guardado en BD).
         reader.notifyObservers(logEvent);
