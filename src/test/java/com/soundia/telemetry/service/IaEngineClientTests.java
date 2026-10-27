@@ -17,6 +17,7 @@ import org.springframework.web.client.RestClientException;
 
 import com.soundia.config.IaEngineProperties;
 import com.soundia.config.RestClientConfig;
+import com.soundia.engine.EngineStatus;
 import com.soundia.telemetry.dto.AiDecisionDto;
 import com.sun.net.httpserver.HttpServer;
 
@@ -31,6 +32,7 @@ class IaEngineClientTests {
 
     @BeforeEach
     void startServer() throws IOException {
+        EngineStatus.getInstance().reset();
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.createContext("/api/mix/calculate", exchange -> {
             bodyRecibido.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
@@ -47,6 +49,7 @@ class IaEngineClientTests {
     @AfterEach
     void stopServer() {
         server.stop(0);
+        EngineStatus.getInstance().reset();
     }
 
     private IaEngineClient client() {
@@ -79,5 +82,23 @@ class IaEngineClientTests {
         respuesta = "{\"error\":\"boom\"}";
 
         assertThrows(RestClientException.class, () -> client().calculateMix(14, 127));
+    }
+
+    @Test
+    void unaRespuestaCorrectaMarcaElMotorComoArriba() {
+        client().calculateMix(14, 127);
+
+        assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
+    }
+
+    @Test
+    void unErrorDelMotorLoMarcaComoCaidoYSePropaga() {
+        statusDeRespuesta = 500;
+
+        assertThrows(RestClientException.class, () -> client().calculateMix(14, 127));
+
+        EngineStatus.Snapshot foto = EngineStatus.getInstance().snapshot();
+        assertEquals(EngineStatus.State.DOWN, foto.state());
+        assertEquals(1, foto.consecutiveFailures());
     }
 }
