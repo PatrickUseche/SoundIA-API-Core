@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.soundia.config.BadRequestException;
 import com.soundia.config.ConflictException;
 import com.soundia.config.ResourceNotFoundException;
 import com.soundia.queue.model.QueueItem;
@@ -109,7 +110,7 @@ class QueueControllerTests {
 
     @Test
     void sacarLaSiguienteDevuelveLaPrimeraPista() throws Exception {
-        when(queue.pollNext(5L)).thenReturn(item(1, 5, 10));
+        when(queue.pollNext(5L, null)).thenReturn(item(1, 5, 10));
 
         mockMvc.perform(post("/api/v1/sessions/5/queue/next"))
                 .andExpect(status().isOk())
@@ -117,8 +118,26 @@ class QueueControllerTests {
     }
 
     @Test
+    void sacarLaSiguienteConOrderPasaLaEstrategiaElegida() throws Exception {
+        when(queue.pollNext(5L, "shuffle")).thenReturn(item(2, 5, 20));
+
+        mockMvc.perform(post("/api/v1/sessions/5/queue/next").param("order", "shuffle"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trackId").value(20));
+    }
+
+    @Test
+    void unOrdenDesconocidoDevuelve400() throws Exception {
+        when(queue.pollNext(5L, "raro")).thenThrow(new BadRequestException("Orden desconocido 'raro'."));
+
+        mockMvc.perform(post("/api/v1/sessions/5/queue/next").param("order", "raro"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Orden desconocido 'raro'."));
+    }
+
+    @Test
     void sacarDeUnaColaVaciaDevuelve404() throws Exception {
-        when(queue.pollNext(5L)).thenThrow(new ResourceNotFoundException("La cola de la sesion 5 esta vacia."));
+        when(queue.pollNext(5L, null)).thenThrow(new ResourceNotFoundException("La cola de la sesion 5 esta vacia."));
 
         mockMvc.perform(post("/api/v1/sessions/5/queue/next"))
                 .andExpect(status().isNotFound())

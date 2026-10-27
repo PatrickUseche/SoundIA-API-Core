@@ -191,13 +191,13 @@ La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el moto
 | `POST` | `/api/v1/autodj/timing` | `{fromTrackId, toTrackId, plannedMixOutAt, actualMixOutAt}` (segundos de la pista saliente, ≥ 0). El DJ pidió mezclar antes de lo planeado: el motor lo guarda y adelanta sus mezclas futuras. 201 con `{samples, advanceSeconds, learned}`. |
 | `GET` | `/api/v1/autodj/weights` | Los pesos de la puntuación vigentes, si son aprendidos y con cuántas valoraciones. |
 
-**Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Orden FIFO; máximo 100 pistas; solo en sesiones abiertas.
+**Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Se encola al final; máximo 100 pistas; solo en sesiones abiertas.
 
 | Método | Ruta | Descripción |
 |---|---|---|
 | `POST` | `/` | `{trackId}`. Encola una pista (verifica que exista en el motor de IA). 201; 409 si la sesión está cerrada o la cola llena. |
 | `GET` | `/` | La cola en orden de reproducción. |
-| `POST` | `/next` | Saca de la cola y devuelve la pista que toca; 404 si está vacía. |
+| `POST` | `/next?order=` | Saca de la cola y devuelve la pista que toca; 404 si está vacía. `order` elige la estrategia: `fifo` (por defecto), `newest` (la última encolada) o `shuffle` (al azar); otro valor da 400. |
 | `DELETE` | `/{itemId}` | Quita un elemento; 204, o 404 si no está en esa sesión. |
 
 ### Grabaciones de mezclas (`/api/v1/recordings`)
@@ -238,5 +238,8 @@ es.addEventListener('decision', (e) => console.log('IA', JSON.parse(e.data)));
 
 - **Observer**: `DjControllerReader` notifica a todos los `MidiObserver` registrados como beans.
   `MidiProcessingObserver` (IA + guardado, asíncrono con reintentos) y `LiveStreamObserver` (SSE).
+- **Strategy**: `QueueOrderStrategy` decide qué pista de la cola toca reproducir (`queue/strategy/`).
+  `FifoOrder`, `NewestFirstOrder` y `ShuffleOrder` son intercambiables; `QueueOrders` las resuelve por nombre y
+  `QueueService.pollNext` no sabe cuál usa. Una estrategia nueva solo tiene que ser un `@Component`.
 - `MidiEventService` es el único flujo de un evento: consulta la IA, guarda **un** registro y publica un evento interno.
 - `LiveStreamPublisher` convierte ese evento interno en un mensaje SSE.

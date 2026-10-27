@@ -12,6 +12,8 @@ import com.soundia.config.ResourceNotFoundException;
 import com.soundia.queue.model.QueueItem;
 import com.soundia.queue.repository.QueueItemRepository;
 import com.soundia.session.model.DjSession;
+import com.soundia.queue.strategy.QueueOrderStrategy;
+import com.soundia.queue.strategy.QueueOrders;
 import com.soundia.session.service.DjSessionService;
 import com.soundia.track.TrackClient;
 
@@ -26,12 +28,15 @@ public class QueueService {
     private final DjSessionService sessions;
     private final TrackClient tracks;
     private final Clock clock;
+    private final QueueOrders orders;
 
-    public QueueService(QueueItemRepository repository, DjSessionService sessions, TrackClient tracks, Clock clock) {
+    public QueueService(QueueItemRepository repository, DjSessionService sessions, TrackClient tracks, Clock clock,
+                        QueueOrders orders) {
         this.repository = repository;
         this.sessions = sessions;
         this.tracks = tracks;
         this.clock = clock;
+        this.orders = orders;
     }
 
     /**
@@ -71,12 +76,25 @@ public class QueueService {
         repository.deleteByTrackId(trackId);
     }
 
-    /** Saca de la cola la pista que toca reproducir y la devuelve. */
+    /** Saca de la cola la pista que toca reproducir (en orden FIFO) y la devuelve. */
     @Transactional
     public QueueItem pollNext(Long sessionId) {
+        return pollNext(sessionId, null);
+    }
+
+    /**
+     * Saca de la cola la pista que elige la estrategia de orden `order` (FIFO si es null) y la devuelve.
+     * Un nombre de orden desconocido da 400 antes de tocar la cola.
+     */
+    @Transactional
+    public QueueItem pollNext(Long sessionId, String order) {
+        QueueOrderStrategy strategy = orders.get(order);
         sessions.get(sessionId);
-        QueueItem next = repository.findFirstBySessionIdOrderByIdAsc(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("La cola de la sesion " + sessionId + " esta vacia."));
+        List<QueueItem> queue = repository.findBySessionIdOrderByIdAsc(sessionId);
+        if (queue.isEmpty()) {
+            throw new ResourceNotFoundException("La cola de la sesion " + sessionId + " esta vacia.");
+        }
+        QueueItem next = strategy.select(queue);
         repository.delete(next);
         return next;
     }

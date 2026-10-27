@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.soundia.queue.dto.AddToQueueRequest;
@@ -40,10 +41,13 @@ public class QueueController {
         return queue.list(sessionId).stream().map(QueueItemResponse::from).toList();
     }
 
-    /** Saca de la cola la pista que toca reproducir y la devuelve; 404 si la cola esta vacia. */
+    /**
+     * Saca de la cola la pista que toca reproducir y la devuelve; 404 si la cola esta vacia. `order` elige
+     * la estrategia (fifo, newest, shuffle); sin indicarlo es fifo y un nombre desconocido da 400.
+     */
     @PostMapping("/next")
-    public QueueItemResponse next(@PathVariable Long sessionId) {
-        return QueueItemResponse.from(queue.pollNext(sessionId));
+    public QueueItemResponse next(@PathVariable Long sessionId, @RequestParam(required = false) String order) {
+        return QueueItemResponse.from(queue.pollNext(sessionId, order));
     }
 
     @DeleteMapping("/{itemId}")
