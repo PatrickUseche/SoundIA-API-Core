@@ -255,4 +255,34 @@ class AutoDjControllerTests {
         enviar("/api/v1/autodj/style-model", "{}")
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void registraLaEleccionDelDj() throws Exception {
+        when(autoDj.submitChoice(1, 2, 3L)).thenReturn("{\"corrections\":1,\"required\":15}");
+
+        enviar("/api/v1/autodj/choices", "{\"fromTrackId\":1,\"chosenTrackId\":2,\"recommendedTrackId\":3}")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.corrections").value(1));
+    }
+
+    @Test
+    void laPropuestaEsOpcionalEnLaEleccion() throws Exception {
+        when(autoDj.submitChoice(1, 2, null)).thenReturn("{\"corrections\":0}");
+
+        enviar("/api/v1/autodj/choices", "{\"fromTrackId\":1,\"chosenTrackId\":2}")
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void elegirLaMismaPistaDevuelve400() throws Exception {
+        enviar("/api/v1/autodj/choices", "{\"fromTrackId\":5,\"chosenTrackId\":5}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("No se puede elegir como siguiente la misma pista."));
+    }
+
+    @Test
+    void sinChosenTrackIdLaEleccionDevuelve400() throws Exception {
+        enviar("/api/v1/autodj/choices", "{\"fromTrackId\":5}")
+                .andExpect(status().isBadRequest());
+    }
 }

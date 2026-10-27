@@ -198,4 +198,25 @@ class AutoDjClientTests {
         assertEquals("/api/mix/style-model", ruta.get());
         assertEquals("{\"enabled\":true}", cuerpo.get());
     }
+
+    @Test
+    void enviaLaEleccionDelDjConLaPropuestaDeLaIa() {
+        respuesta = "{\"corrections\":1}";
+
+        String resultado = client().submitChoice(1, 2, 3L);
+
+        assertEquals("{\"corrections\":1}", resultado);
+        assertEquals("POST", metodo.get());
+        assertEquals("/api/mix/choices", ruta.get());
+        assertTrue(cuerpo.get().contains("\"fromTrackId\":1"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"chosenTrackId\":2"), cuerpo.get());
+        assertTrue(cuerpo.get().contains("\"recommendedTrackId\":3"), cuerpo.get());
+    }
+
+    @Test
+    void sinPropuestaNoEnviaRecommendedTrackId() {
+        client().submitChoice(1, 2, null);
+
+        assertFalse(cuerpo.get().contains("recommendedTrackId"), cuerpo.get());
+    }
 }

@@ -88,6 +88,7 @@ Acordado con el usuario (2026-10-27): implementar 5 patrones en la lógica del b
 - [x] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]
 - [x] feat(engine): `EngineStatus.track(...)`: `AutoDjClient` y `TrackClient` también informan del estado del motor (un 4xx cuenta como motor arriba, un 5xx o una conexión caída como motor caído) [12.7]
 - [x] feat(autodj): rutas `GET` y `POST /api/v1/autodj/style-model` para ver y encender o apagar el modelo del estilo del DJ del motor [12.8]
+- [x] feat(autodj): ruta `POST /api/v1/autodj/choices` para registrar lo que el DJ eligió como siguiente pista frente a lo que proponía la IA [12.9]
 
 ## Fase 13 — Rendimiento y usabilidad
 
