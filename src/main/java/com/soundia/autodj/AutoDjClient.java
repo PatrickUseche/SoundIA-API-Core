@@ -49,6 +49,16 @@ public class AutoDjClient {
                 .with("plannedMixOutAt", plannedMixOutAt).with("actualMixOutAt", actualMixOutAt).build());
     }
 
+    /**
+     * Lo que el DJ eligio como siguiente pista tras `fromTrackId` y, si la hay, la que la IA habria propuesto: de la
+     * diferencia el motor aprende que pista sigue. `recommendedTrackId` puede ser null.
+     */
+    public String submitChoice(long fromTrackId, long chosenTrackId, Long recommendedTrackId) {
+        return post("choices", EngineRequestBuilder.create()
+                .with("fromTrackId", fromTrackId).with("chosenTrackId", chosenTrackId)
+                .withIfPresent("recommendedTrackId", recommendedTrackId).build());
+    }
+
     /** Los pesos de la puntuacion que el motor usa ahora (aprendidos o por defecto). */
     public String weights() {
         return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.mixUrl("weights"), String.class));

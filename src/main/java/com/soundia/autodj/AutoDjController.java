@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.soundia.autodj.dto.ChoiceRequest;
 import com.soundia.autodj.dto.FeedbackRequest;
 import com.soundia.autodj.dto.MixTimingRequest;
 import com.soundia.autodj.dto.NextTracksRequest;
@@ -68,6 +69,19 @@ public class AutoDjController {
         }
         String body = autoDj.submitMixTiming(request.fromTrackId(), request.toTrackId(),
                 request.plannedMixOutAt(), request.actualMixOutAt());
+        return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(body);
+    }
+
+    /**
+     * El DJ eligio una pista como siguiente (y la IA habria propuesto otra): el motor aprende de la diferencia que
+     * pista sigue. Devuelve las cuentas del modelo.
+     */
+    @PostMapping("/choices")
+    public ResponseEntity<String> choices(@Valid @RequestBody ChoiceRequest request) {
+        if (request.fromTrackId().equals(request.chosenTrackId())) {
+            throw new BadRequestException("No se puede elegir como siguiente la misma pista.");
+        }
+        String body = autoDj.submitChoice(request.fromTrackId(), request.chosenTrackId(), request.recommendedTrackId());
         return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON).body(body);
     }
 
