@@ -2,6 +2,10 @@ package com.soundia.engine;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.function.Supplier;
+
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 /**
  * Patron Singleton: el estado del motor de IA (Django) segun las ultimas llamadas que se le hicieron. En la nube
@@ -68,6 +72,25 @@ public final class EngineStatus {
         consecutiveFailures++;
         lastFailureAt = clock.instant();
         lastError = reason;
+    }
+
+    /**
+     * Hace una llamada al motor y anota como le fue: si responde (aunque sea un 4xx, que es un error de la peticion y
+     * no del motor) queda arriba; si no se llega a el o responde con un 5xx, queda caido. El error se vuelve a lanzar
+     * tal cual, asi que los clientes no cambian su comportamiento.
+     */
+    public <T> T track(Supplier<T> call) {
+        try {
+            T result = call.get();
+            recordSuccess();
+            return result;
+        } catch (ResourceAccessException | HttpServerErrorException e) {
+            recordFailure(e.getMessage());
+            throw e;
+        } catch (RuntimeException e) {
+            recordSuccess();
+            throw e;
+        }
     }
 
     public synchronized Snapshot snapshot() {

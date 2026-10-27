@@ -251,7 +251,9 @@ Los cinco patrones de diseño del backend (Observer, Strategy, Builder, Factory 
   `LiveStreamPublisher` piden el mensaje por el tipo y no conocen las clases concretas.
 - **Singleton**: `EngineStatus` (`engine/`) guarda lo que se sabe del motor de IA según sus últimas llamadas
   (`UNKNOWN`, `UP` o `DOWN`, fallos seguidos, último error). La instancia es única y se crea de forma perezosa con el
-  idiom del holder; sus métodos son `synchronized` porque lo usan varios hilos. `IaEngineClient` lo actualiza en cada
-  llamada de decisión y `GET /api/v1/engine/status` lo muestra (no consulta al motor, solo informa de la última llamada).
+  idiom del holder; sus métodos son `synchronized` porque lo usan varios hilos. Los tres clientes del motor
+  (`IaEngineClient`, `AutoDjClient` y `TrackClient`) envuelven sus llamadas en `EngineStatus.track(...)`: si el motor
+  responde queda `UP` (un 4xx es un error de la petición, no del motor) y si no se llega a él o responde 5xx queda `DOWN`.
+  `GET /api/v1/engine/status` lo muestra (no consulta al motor, solo informa de la última llamada).
 - `MidiEventService` es el único flujo de un evento: consulta la IA, guarda **un** registro y publica un evento interno.
 - `LiveStreamPublisher` convierte ese evento interno en un mensaje SSE.

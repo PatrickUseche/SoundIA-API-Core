@@ -3,6 +3,7 @@ package com.soundia.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -15,6 +16,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 class EngineStatusTests {
 
@@ -117,5 +123,45 @@ class EngineStatusTests {
         pool.awaitTermination(10, TimeUnit.SECONDS);
 
         assertEquals(hilos * porHilo, status.snapshot().consecutiveFailures());
+    }
+
+    @Test
+    void trackDevuelveElResultadoYDejaElMotorArriba() {
+        String resultado = status.track(() -> "ok");
+
+        assertEquals("ok", resultado);
+        assertEquals(EngineStatus.State.UP, status.snapshot().state());
+    }
+
+    @Test
+    void trackMarcaCaidoSiNoSeLlegaAlMotorYRelanzaElError() {
+        ResourceAccessException error = assertThrows(ResourceAccessException.class,
+                () -> status.track(() -> { throw new ResourceAccessException("Connection refused"); }));
+
+        assertEquals("Connection refused", error.getMessage());
+        assertEquals(EngineStatus.State.DOWN, status.snapshot().state());
+        assertEquals(1, status.snapshot().consecutiveFailures());
+    }
+
+    @Test
+    void trackMarcaCaidoCuandoElMotorResponde5xx() {
+        assertThrows(HttpServerErrorException.class, () -> status.track(() -> {
+            throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "Bad Gateway", HttpHeaders.EMPTY, new byte[0], null);
+        }));
+
+        assertEquals(EngineStatus.State.DOWN, status.snapshot().state());
+    }
+
+    @Test
+    void unErrorDePeticionDel4xxNoCuentaComoMotorCaido() {
+        status.recordFailure("antes");
+
+        assertThrows(HttpClientErrorException.class, () -> status.track(() -> {
+            throw HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, new byte[0], null);
+        }));
+
+        // El motor contesto, asi que esta arriba aunque la pista no exista.
+        assertEquals(EngineStatus.State.UP, status.snapshot().state());
+        assertEquals(0, status.snapshot().consecutiveFailures());
     }
 }

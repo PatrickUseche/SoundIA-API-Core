@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.soundia.config.IaEngineProperties;
+import com.soundia.engine.EngineStatus;
 
 /**
  * Acceso a las pistas que analiza y guarda el motor de IA (Django es el dueno de los datos de pista).
@@ -85,7 +86,7 @@ public class TrackClient {
     /** Consulta ligera que despierta al motor si estaba dormido; un fallo aqui no importa, el analisis lo volvera a ver. */
     private void wakeUp() {
         try {
-            restTemplate.getForObject(properties.audioUrl("tracks"), String.class);
+            EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.audioUrl("tracks"), String.class));
         } catch (RestClientException e) {
             log.debug("No se pudo despertar al motor de IA antes de analizar: {}", e.getMessage());
         }
@@ -119,27 +120,30 @@ public class TrackClient {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        return analysisRestTemplate.postForObject(
-                properties.audioUrl("analyze"), new HttpEntity<>(body, headers), String.class);
+        return EngineStatus.getInstance().track(() -> analysisRestTemplate.postForObject(
+                properties.audioUrl("analyze"), new HttpEntity<>(body, headers), String.class));
     }
 
     public String listTracks() {
-        return restTemplate.getForObject(properties.audioUrl("tracks"), String.class);
+        return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.audioUrl("tracks"), String.class));
     }
 
     public String getTrack(long id) {
-        return restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class);
+        return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.audioUrl("tracks/" + id), String.class));
     }
 
     /** Cambia el genero de la pista (`{"genre": "salsa"}`); devuelve la pista actualizada (JSON). */
     public String setGenre(long id, String genre) {
-        return restTemplate.exchange(properties.audioUrl("tracks/" + id), HttpMethod.PUT,
-                new HttpEntity<>(Map.of("genre", genre)), String.class).getBody();
+        return EngineStatus.getInstance().track(() -> restTemplate.exchange(properties.audioUrl("tracks/" + id), HttpMethod.PUT,
+                new HttpEntity<>(Map.of("genre", genre)), String.class).getBody());
     }
 
     /** Borra la pista y su audio en el motor de IA. Si no existe, el motor responde 404 y llega al cliente. */
     public void deleteTrack(long id) {
-        restTemplate.delete(properties.audioUrl("tracks/" + id));
+        EngineStatus.getInstance().track(() -> {
+            restTemplate.delete(properties.audioUrl("tracks/" + id));
+            return null;
+        });
     }
 
     /**
@@ -147,8 +151,8 @@ public class TrackClient {
      * rejilla y lo guarda como primer tiempo. Devuelve la pista actualizada (JSON).
      */
     public String setDownbeat(long id, double downbeat) {
-        return restTemplate.exchange(properties.audioUrl("tracks/" + id + "/grid"), HttpMethod.PUT,
-                new HttpEntity<>(Map.of("downbeat", downbeat)), String.class).getBody();
+        return EngineStatus.getInstance().track(() -> restTemplate.exchange(properties.audioUrl("tracks/" + id + "/grid"), HttpMethod.PUT,
+                new HttpEntity<>(Map.of("downbeat", downbeat)), String.class).getBody());
     }
 
     /**
@@ -156,7 +160,8 @@ public class TrackClient {
      * que tiene un timeout de lectura largo.
      */
     public ResponseEntity<byte[]> getTrackAudio(long id) {
-        return analysisRestTemplate.getForEntity(properties.audioUrl("tracks/" + id + "/file"), byte[].class);
+        return EngineStatus.getInstance().track(
+                () -> analysisRestTemplate.getForEntity(properties.audioUrl("tracks/" + id + "/file"), byte[].class));
     }
 
     /** Un ByteArrayResource con nombre de archivo, que es lo que hace falta para enviarlo como parte multipart. */

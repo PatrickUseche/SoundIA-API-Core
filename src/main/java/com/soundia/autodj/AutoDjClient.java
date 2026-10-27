@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.soundia.config.IaEngineProperties;
+import com.soundia.engine.EngineStatus;
 
 /**
  * Pasarela hacia el motor de mezcla de Django: que pista sigue y como hacer la transicion.
@@ -50,12 +51,13 @@ public class AutoDjClient {
 
     /** Los pesos de la puntuacion que el motor usa ahora (aprendidos o por defecto). */
     public String weights() {
-        return restTemplate.getForObject(properties.mixUrl("weights"), String.class);
+        return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.mixUrl("weights"), String.class));
     }
 
     private String post(String path, Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        return restTemplate.postForObject(properties.mixUrl(path), new HttpEntity<>(body, headers), String.class);
+        return EngineStatus.getInstance().track(
+                () -> restTemplate.postForObject(properties.mixUrl(path), new HttpEntity<>(body, headers), String.class));
     }
 }
