@@ -1,7 +1,9 @@
 package com.soundia.track;
 
 import java.io.IOException;
+import java.time.Duration;
 
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,8 @@ import jakarta.validation.constraints.Size;
 @RestController
 @RequestMapping("/api/v1/tracks")
 public class TrackController {
+
+    private static final CacheControl AUDIO_CACHE = CacheControl.maxAge(Duration.ofHours(1)).cachePrivate();
 
     private final TrackClient tracks;
     private final QueueService queues;
@@ -99,13 +103,17 @@ public class TrackController {
                 .body(tracks.setDownbeat(id, request.downbeat()));
     }
 
-    /** El audio original de la pista, para decodificarlo y reproducirlo en un deck del navegador. */
+    /**
+     * El audio original de la pista, para decodificarlo y reproducirlo en un deck del navegador. El audio de un id no
+     * cambia nunca (los ids no se reutilizan), asi que el navegador puede guardarlo: cargar la misma pista de nuevo en
+     * un deck no vuelve a bajarla del API ni a despertar al motor de IA. Es "private" porque la respuesta es del usuario.
+     */
     @GetMapping("/{id}/audio")
     public ResponseEntity<byte[]> audio(@PathVariable long id) {
         ResponseEntity<byte[]> upstream = tracks.getTrackAudio(id);
         byte[] body = upstream.getBody() != null ? upstream.getBody() : new byte[0];
         MediaType type = upstream.getHeaders().getContentType() != null
                 ? upstream.getHeaders().getContentType() : MediaType.APPLICATION_OCTET_STREAM;
-        return ResponseEntity.ok().contentType(type).contentLength(body.length).body(body);
+        return ResponseEntity.ok().cacheControl(AUDIO_CACHE).contentType(type).contentLength(body.length).body(body);
     }
 }

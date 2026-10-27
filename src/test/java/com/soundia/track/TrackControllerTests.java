@@ -176,6 +176,15 @@ class TrackControllerTests {
     }
 
     @Test
+    void elAudioSePuedeGuardarEnElNavegadorPeroNoEnCachesCompartidas() throws Exception {
+        when(tracks.getTrackAudio(4)).thenReturn(ResponseEntity.ok().body(new byte[] {1}));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Cache-Control", "max-age=3600, private"));
+    }
+
+    @Test
     void sinTipoDeContenidoDelMotorUsaOctetStream() throws Exception {
         when(tracks.getTrackAudio(4)).thenReturn(ResponseEntity.ok().body(new byte[] {9}));
 

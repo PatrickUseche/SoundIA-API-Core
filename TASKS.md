@@ -86,3 +86,11 @@ Acordado con el usuario (2026-10-27): implementar 5 patrones en la lógica del b
 - [x] refactor(telemetry): Builder para `DjSessionLog` y los cuerpos de petición de `AutoDjClient` [12.4]
 - [x] feat(stream): Factory Method para los mensajes SSE [12.5]
 - [x] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]
+
+## Fase 13 — Rendimiento y usabilidad
+
+Revisión del 2026-10-27 con las skills `lemmaly` (complejidad) y `ui-ux-pro-max`.
+
+- [x] perf(telemetry): índices en `dj_session_logs` (`created_in` y `session_id, created_in`): las consultas de los últimos 50 movimientos y de los eventos de una sesión pasan de O(N) a O(log N + k) [13.1]
+- [x] perf(tracks): `Cache-Control: private, max-age=3600` en `GET /tracks/{id}/audio`, para que el navegador no vuelva a bajar ni a despertar al motor por una pista ya cargada [13.2]
+
