@@ -13,7 +13,7 @@ import com.soundia.telemetry.model.DjSessionLog;
 class LiveStreamPublisherTests {
 
     private final LiveStreamService liveStream = mock(LiveStreamService.class);
-    private final LiveStreamPublisher publisher = new LiveStreamPublisher(liveStream);
+    private final LiveStreamPublisher publisher = new LiveStreamPublisher(liveStream, new StreamMessageFactory());
 
     @Test
     void publicaLaDecisionConLosDatosDelRegistroGuardado() {

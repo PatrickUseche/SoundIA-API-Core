@@ -9,13 +9,14 @@ import com.soundia.telemetry.model.DjSessionLog;
 import com.soundia.telemetry.stream.LiveStreamService;
 import com.soundia.telemetry.stream.MidiMessage;
 import com.soundia.telemetry.stream.StreamEventType;
+import com.soundia.telemetry.stream.StreamMessageFactory;
 
 class LiveStreamObserverTests {
 
     @Test
     void publicaElEventoMidiRecibidoAlStream() {
         LiveStreamService liveStream = mock(LiveStreamService.class);
-        LiveStreamObserver observer = new LiveStreamObserver(liveStream);
+        LiveStreamObserver observer = new LiveStreamObserver(liveStream, new StreamMessageFactory());
 
         observer.onMidiEvent(new DjSessionLog(14, 127));
 
