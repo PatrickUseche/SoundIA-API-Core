@@ -24,10 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.web.client.ResourceAccessException;
 
+import com.soundia.config.BadRequestException;
 import com.soundia.config.ConflictException;
 import com.soundia.config.ResourceNotFoundException;
 import com.soundia.queue.model.QueueItem;
 import com.soundia.queue.repository.QueueItemRepository;
+import com.soundia.queue.strategy.FifoOrder;
+import com.soundia.queue.strategy.NewestFirstOrder;
+import com.soundia.queue.strategy.QueueOrders;
+import com.soundia.queue.strategy.ShuffleOrder;
 import com.soundia.session.model.DjSession;
 import com.soundia.session.service.DjSessionService;
 import com.soundia.track.TrackClient;
@@ -48,7 +53,8 @@ class QueueServiceTests {
         tracks = mock(TrackClient.class);
         when(repository.save(any(QueueItem.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
         service = new QueueService(repository, sessions, tracks,
-                Clock.fixed(Instant.parse("2026-10-21T20:00:00Z"), ZoneOffset.UTC));
+                Clock.fixed(Instant.parse("2026-10-21T20:00:00Z"), ZoneOffset.UTC),
+                new QueueOrders(List.of(new FifoOrder(), new NewestFirstOrder(), new ShuffleOrder())));
     }
 
     private DjSession sesion(long id, boolean cerrada) {
@@ -186,7 +192,7 @@ class QueueServiceTests {
     void sacaLaSiguientePistaYLaQuitaDeLaCola() {
         sesionAbierta(5);
         QueueItem primero = item(1, 5, 10);
-        when(repository.findFirstBySessionIdOrderByIdAsc(5L)).thenReturn(Optional.of(primero));
+        when(repository.findBySessionIdOrderByIdAsc(5L)).thenReturn(List.of(primero, item(2, 5, 20)));
 
         QueueItem siguiente = service.pollNext(5L);
 
@@ -199,11 +205,52 @@ class QueueServiceTests {
     @Test
     void sacarDeUnaColaVaciaDa404ConUnMensajeClaro() {
         sesionAbierta(5);
-        when(repository.findFirstBySessionIdOrderByIdAsc(5L)).thenReturn(Optional.empty());
+        when(repository.findBySessionIdOrderByIdAsc(5L)).thenReturn(List.of());
 
         ResourceNotFoundException error = assertThrows(ResourceNotFoundException.class, () -> service.pollNext(5L));
 
         assertTrue(error.getMessage().contains("vacia"), error.getMessage());
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void conOrderNewestSacaLaUltimaPistaEncolada() {
+        sesionAbierta(5);
+        QueueItem primero = item(1, 5, 10);
+        QueueItem ultimo = item(2, 5, 20);
+        when(repository.findBySessionIdOrderByIdAsc(5L)).thenReturn(List.of(primero, ultimo));
+
+        QueueItem siguiente = service.pollNext(5L, "newest");
+
+        assertSame(ultimo, siguiente);
+        verify(repository).delete(ultimo);
+    }
+
+    @Test
+    void elNombreDelOrdenNoDistingueMayusculas() {
+        sesionAbierta(5);
+        QueueItem ultimo = item(2, 5, 20);
+        when(repository.findBySessionIdOrderByIdAsc(5L)).thenReturn(List.of(item(1, 5, 10), ultimo));
+
+        assertSame(ultimo, service.pollNext(5L, " NEWEST "));
+    }
+
+    @Test
+    void sinIndicarOrdenUsaFifo() {
+        sesionAbierta(5);
+        QueueItem primero = item(1, 5, 10);
+        when(repository.findBySessionIdOrderByIdAsc(5L)).thenReturn(List.of(primero, item(2, 5, 20)));
+
+        assertSame(primero, service.pollNext(5L, null));
+        assertSame(primero, service.pollNext(5L, " "));
+    }
+
+    @Test
+    void unOrdenDesconocidoDa400SinTocarLaCola() {
+        BadRequestException error = assertThrows(BadRequestException.class, () -> service.pollNext(5L, "alfabetico"));
+
+        assertTrue(error.getMessage().contains("alfabetico"), error.getMessage());
+        assertTrue(error.getMessage().contains("fifo, newest, shuffle"), error.getMessage());
         verify(repository, never()).delete(any());
     }
 }
