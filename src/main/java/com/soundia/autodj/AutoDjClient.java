@@ -54,6 +54,16 @@ public class AutoDjClient {
         return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.mixUrl("weights"), String.class));
     }
 
+    /** Cuantas mezclas buenas hay para aprender el estilo del DJ, como le va al modelo frente a las reglas y si esta encendido. */
+    public String styleModel() {
+        return EngineStatus.getInstance().track(() -> restTemplate.getForObject(properties.mixUrl("style-model"), String.class));
+    }
+
+    /** Enciende o apaga el modelo del estilo del DJ; devuelve su estado. Apagado, el plan usa solo las reglas. */
+    public String setStyleModel(boolean enabled) {
+        return post("style-model", EngineRequestBuilder.create().with("enabled", enabled).build());
+    }
+
     private String post(String path, Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

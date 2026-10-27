@@ -229,4 +229,30 @@ class AutoDjControllerTests {
                 .andExpect(jsonPath("$.weights.harmonic").value(0.6))
                 .andExpect(jsonPath("$.samples").value(40));
     }
+
+    @Test
+    void consultaElEstadoDelModeloDeEstilo() throws Exception {
+        when(autoDj.styleModel()).thenReturn("{\"goodRecordings\":12,\"required\":20,\"ready\":false,\"enabled\":false}");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/autodj/style-model"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.goodRecordings").value(12))
+                .andExpect(jsonPath("$.required").value(20))
+                .andExpect(jsonPath("$.enabled").value(false));
+    }
+
+    @Test
+    void enciendeElModeloDeEstilo() throws Exception {
+        when(autoDj.setStyleModel(true)).thenReturn("{\"enabled\":true}");
+
+        enviar("/api/v1/autodj/style-model", "{\"enabled\":true}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true));
+    }
+
+    @Test
+    void sinEnabledElModeloDeEstiloDevuelve400() throws Exception {
+        enviar("/api/v1/autodj/style-model", "{}")
+                .andExpect(status().isBadRequest());
+    }
 }

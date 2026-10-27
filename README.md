@@ -190,6 +190,8 @@ La IA recomienda qué pista sigue y cómo mezclarla (el cálculo vive en el moto
 | `POST` | `/api/v1/autodj/feedback` | `{fromTrackId, toTrackId, liked}` (`liked` debe ser `true`/`false`). El DJ valora una transición: el motor la guarda y reajusta cuánto pesan tempo, armonía y energía. 201 con `{weights, samples, learned}`. |
 | `POST` | `/api/v1/autodj/timing` | `{fromTrackId, toTrackId, plannedMixOutAt, actualMixOutAt}` (segundos de la pista saliente, ≥ 0). El DJ pidió mezclar antes de lo planeado: el motor lo guarda y adelanta sus mezclas futuras. 201 con `{samples, advanceSeconds, learned}`. |
 | `GET` | `/api/v1/autodj/weights` | Los pesos de la puntuación vigentes, si son aprendidos y con cuántas valoraciones. |
+| `GET` | `/api/v1/autodj/style-model` | El modelo del estilo del DJ (entrenado solo con sus mezclas buenas): `goodRecordings`, `required`, `ready`, `enabled`, su evaluación contra las reglas y qué parámetros usa ahora (`inUse`). |
+| `POST` | `/api/v1/autodj/style-model` | `{enabled}` (`true`/`false`). Enciende o apaga el modelo; apagado (por defecto) el plan usa solo las reglas. Devuelve el estado. |
 
 **Cola de reproducción** de una sesión (`/api/v1/sessions/{sessionId}/queue`). Se encola al final; máximo 100 pistas; solo en sesiones abiertas.
 

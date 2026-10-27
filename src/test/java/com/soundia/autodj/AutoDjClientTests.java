@@ -178,4 +178,24 @@ class AutoDjClientTests {
 
         assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
     }
+
+    @Test
+    void consultaElEstadoDelModeloDeEstilo() {
+        respuesta = "{\"goodRecordings\":3,\"required\":20}";
+
+        String resultado = client().styleModel();
+
+        assertEquals("{\"goodRecordings\":3,\"required\":20}", resultado);
+        assertEquals("GET", metodo.get());
+        assertEquals("/api/mix/style-model", ruta.get());
+    }
+
+    @Test
+    void enciendeElModeloDeEstiloEnElMotor() {
+        client().setStyleModel(true);
+
+        assertEquals("POST", metodo.get());
+        assertEquals("/api/mix/style-model", ruta.get());
+        assertEquals("{\"enabled\":true}", cuerpo.get());
+    }
 }

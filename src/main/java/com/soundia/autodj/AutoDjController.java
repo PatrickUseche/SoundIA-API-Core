@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.soundia.autodj.dto.FeedbackRequest;
 import com.soundia.autodj.dto.MixTimingRequest;
 import com.soundia.autodj.dto.NextTracksRequest;
+import com.soundia.autodj.dto.StyleModelRequest;
 import com.soundia.autodj.dto.TransitionRequest;
 import com.soundia.config.BadRequestException;
 
@@ -74,6 +75,18 @@ public class AutoDjController {
     @GetMapping("/weights")
     public ResponseEntity<String> weights() {
         return json(autoDj.weights());
+    }
+
+    /** El modelo del estilo del DJ: mezclas buenas que hay y que faltan, su evaluacion contra las reglas y si esta encendido. */
+    @GetMapping("/style-model")
+    public ResponseEntity<String> styleModel() {
+        return json(autoDj.styleModel());
+    }
+
+    /** Enciende o apaga el modelo del estilo del DJ. Apagado es la vuelta atras: el plan usa solo las reglas. */
+    @PostMapping("/style-model")
+    public ResponseEntity<String> setStyleModel(@Valid @RequestBody StyleModelRequest request) {
+        return json(autoDj.setStyleModel(request.enabled()));
     }
 
     private static ResponseEntity<String> json(String body) {
