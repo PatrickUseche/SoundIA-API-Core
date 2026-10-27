@@ -244,5 +244,8 @@ es.addEventListener('decision', (e) => console.log('IA', JSON.parse(e.data)));
 - **Builder**: `DjSessionLog.builder()` arma el registro de un evento MIDI (control y valor obligatorios; acción y
   sesión opcionales) y `EngineRequestBuilder` arma los cuerpos de las peticiones de `AutoDjClient` al motor,
   omitiendo los campos opcionales sin valor.
+- **Factory Method**: `StreamMessageFactory.create(tipo, registro, estado)` crea el mensaje SSE de cada tipo de evento
+  (`midi` → `MidiMessage`, `decision` → `DecisionMessage`, ambos `StreamMessage`). `LiveStreamObserver` y
+  `LiveStreamPublisher` piden el mensaje por el tipo y no conocen las clases concretas.
 - `MidiEventService` es el único flujo de un evento: consulta la IA, guarda **un** registro y publica un evento interno.
 - `LiveStreamPublisher` convierte ese evento interno en un mensaje SSE.
