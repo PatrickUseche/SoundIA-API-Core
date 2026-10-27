@@ -1,5 +1,6 @@
 package com.soundia.track;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -173,6 +175,24 @@ class TrackControllerTests {
                 .andExpect(content().contentType("audio/wav"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Length", "5"))
                 .andExpect(content().bytes(audio));
+    }
+
+    @Test
+    void elAudioSePuedeGuardarEnElNavegadorPeroNoEnCachesCompartidas() throws Exception {
+        when(tracks.getTrackAudio(4)).thenReturn(ResponseEntity.ok().body(new byte[] {1}));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(header().string("Cache-Control", containsString("max-age=3600")))
+                .andExpect(header().string("Cache-Control", containsString("private")));
+    }
+
+    @Test
+    void unAudioVacioNoSeGuardaEnElNavegador() throws Exception {
+        when(tracks.getTrackAudio(4)).thenReturn(ResponseEntity.ok().body(new byte[0]));
+
+        mockMvc.perform(get("/api/v1/tracks/4/audio"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("Cache-Control"));
     }
 
     @Test

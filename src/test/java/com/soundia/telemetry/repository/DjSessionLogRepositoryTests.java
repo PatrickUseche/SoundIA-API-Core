@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.soundia.telemetry.model.DjSessionLog;
@@ -22,6 +23,9 @@ class DjSessionLogRepositoryTests {
 
     @Autowired
     private DjSessionLogRepository repository;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Test
     void guardaLaAccionDeLaIaYAsignaLaFecha() {
@@ -100,5 +104,19 @@ class DjSessionLogRepositoryTests {
         DjSessionLog guardado = enSesion(8, 1);
 
         assertEquals(8L, repository.findById(guardado.getId()).orElseThrow().getSessionId());
+    }
+
+    @Test
+    void laTablaTieneLosIndicesQueUsanLasConsultasDelRepositorio() {
+        assertEquals(List.of("created_in"), columnasDelIndice("idx_dj_session_logs_created_in"));
+        // El orden importa: primero la sesion (filtro) y luego la fecha (orden dentro de la sesion).
+        assertEquals(List.of("session_id", "created_in"), columnasDelIndice("idx_dj_session_logs_session_created"));
+    }
+
+    private List<String> columnasDelIndice(String indice) {
+        return jdbc.queryForList(
+                "SELECT LOWER(COLUMN_NAME) FROM INFORMATION_SCHEMA.INDEX_COLUMNS "
+                        + "WHERE LOWER(INDEX_NAME) = ? ORDER BY ORDINAL_POSITION",
+                String.class, indice);
     }
 }

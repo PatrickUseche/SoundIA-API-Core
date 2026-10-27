@@ -4,7 +4,14 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "dj_session_logs")
+// Cada evento MIDI es una fila, asi que la tabla crece sin parar. Sin indices, las dos consultas del repositorio
+// recorren toda la tabla (O(N)); con ellos bajan por el arbol (O(log N + k), k = 50 o 500 filas).
+@Table(name = "dj_session_logs", indexes = {
+        // findTop50ByOrderByCreatedInDesc: los ultimos movimientos de la consola.
+        @Index(name = "idx_dj_session_logs_created_in", columnList = "created_in"),
+        // findTop500BySessionIdOrderByCreatedInAscIdAsc: filtra por sesion y ya viene ordenado por fecha.
+        @Index(name = "idx_dj_session_logs_session_created", columnList = "session_id, created_in")
+})
 public class DjSessionLog {
 
     @Id
