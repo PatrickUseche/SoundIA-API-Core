@@ -114,6 +114,11 @@ public class TrackController {
         byte[] body = upstream.getBody() != null ? upstream.getBody() : new byte[0];
         MediaType type = upstream.getHeaders().getContentType() != null
                 ? upstream.getHeaders().getContentType() : MediaType.APPLICATION_OCTET_STREAM;
-        return ResponseEntity.ok().cacheControl(AUDIO_CACHE).contentType(type).contentLength(body.length).body(body);
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok().contentType(type).contentLength(body.length);
+        if (body.length > 0) {
+            // Un cuerpo vacio no se guarda: el navegador lo repetiria una hora aunque el motor ya tenga el audio.
+            response.cacheControl(AUDIO_CACHE);
+        }
+        return response.body(body);
     }
 }

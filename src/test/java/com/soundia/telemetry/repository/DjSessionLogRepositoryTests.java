@@ -3,7 +3,6 @@ package com.soundia.telemetry.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -109,11 +108,15 @@ class DjSessionLogRepositoryTests {
 
     @Test
     void laTablaTieneLosIndicesQueUsanLasConsultasDelRepositorio() {
-        List<String> indices = jdbc.queryForList(
-                "SELECT LOWER(INDEX_NAME) FROM INFORMATION_SCHEMA.INDEXES WHERE LOWER(TABLE_NAME) = 'dj_session_logs'",
-                String.class);
+        assertEquals(List.of("created_in"), columnasDelIndice("idx_dj_session_logs_created_in"));
+        // El orden importa: primero la sesion (filtro) y luego la fecha (orden dentro de la sesion).
+        assertEquals(List.of("session_id", "created_in"), columnasDelIndice("idx_dj_session_logs_session_created"));
+    }
 
-        assertTrue(indices.contains("idx_dj_session_logs_created_in"), indices.toString());
-        assertTrue(indices.contains("idx_dj_session_logs_session_created"), indices.toString());
+    private List<String> columnasDelIndice(String indice) {
+        return jdbc.queryForList(
+                "SELECT LOWER(COLUMN_NAME) FROM INFORMATION_SCHEMA.INDEX_COLUMNS "
+                        + "WHERE LOWER(INDEX_NAME) = ? ORDER BY ORDINAL_POSITION",
+                String.class, indice);
     }
 }
