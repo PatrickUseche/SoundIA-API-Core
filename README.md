@@ -236,6 +236,8 @@ es.addEventListener('decision', (e) => console.log('IA', JSON.parse(e.data)));
 
 ## Arquitectura
 
+Los cinco patrones de diseño del backend (Observer, Strategy, Builder, Factory Method y Singleton), con sus diagramas, están en [docs/PATRONES-DE-DISENO.md](docs/PATRONES-DE-DISENO.md).
+
 - **Observer**: `DjControllerReader` notifica a todos los `MidiObserver` registrados como beans.
   `MidiProcessingObserver` (IA + guardado, asíncrono con reintentos) y `LiveStreamObserver` (SSE).
 - **Strategy**: `QueueOrderStrategy` decide qué pista de la cola toca reproducir (`queue/strategy/`).
