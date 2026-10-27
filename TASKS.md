@@ -81,8 +81,8 @@ Acordado con el usuario (2026-10-24): el DJ usa la versión de la nube, por sesi
 Acordado con el usuario (2026-10-27): implementar 5 patrones en la lógica del backend Java, un PR por patrón. Revisión previa en `docs/review/2026-10-27-soundia-api-core-pattern-review.md`.
 
 - [x] docs(review): informe de patrones de diseño del API Core [12.1]
-- [ ] docs(patterns): Observer ya existe en `telemetry/pattern/` (`DjControllerReader` + `MidiObserver`); solo se documenta [12.2]
+- [x] docs(patterns): Observer ya existe en `telemetry/pattern/` (`DjControllerReader` + `MidiObserver`); solo se documenta, junto con los otros cuatro patrones y sus diagramas en `docs/PATRONES-DE-DISENO.md` [12.2]
 - [x] feat(queue): Strategy: orden de la cola (`QueueOrderStrategy`: FIFO, más reciente primero, aleatorio) elegible con `?order=` [12.3]
 - [x] refactor(telemetry): Builder para `DjSessionLog` y los cuerpos de petición de `AutoDjClient` [12.4]
-- [ ] feat(stream): Factory Method para los mensajes SSE [12.5]
-- [ ] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]
+- [x] feat(stream): Factory Method para los mensajes SSE [12.5]
+- [x] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]

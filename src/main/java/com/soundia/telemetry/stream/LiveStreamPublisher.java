@@ -8,13 +8,15 @@ import org.springframework.stereotype.Component;
 public class LiveStreamPublisher {
 
     private final LiveStreamService liveStream;
+    private final StreamMessageFactory messages;
 
-    public LiveStreamPublisher(LiveStreamService liveStream) {
+    public LiveStreamPublisher(LiveStreamService liveStream, StreamMessageFactory messages) {
         this.liveStream = liveStream;
+        this.messages = messages;
     }
 
     @EventListener
     public void onDecision(MidiDecisionEvent event) {
-        liveStream.publish(StreamEventType.DECISION, DecisionMessage.from(event.log(), event.status()));
+        liveStream.publish(StreamEventType.DECISION, messages.create(StreamEventType.DECISION, event.log(), event.status()));
     }
 }

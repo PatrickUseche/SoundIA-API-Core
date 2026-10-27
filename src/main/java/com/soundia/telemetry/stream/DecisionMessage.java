@@ -15,7 +15,7 @@ public record DecisionMessage(
         String status,
         String action,
         LocalDateTime createdIn
-        ) {
+        ) implements StreamMessage {
 
     public static final String UNAVAILABLE = "unavailable";
 
