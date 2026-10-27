@@ -247,5 +247,9 @@ es.addEventListener('decision', (e) => console.log('IA', JSON.parse(e.data)));
 - **Factory Method**: `StreamMessageFactory.create(tipo, registro, estado)` crea el mensaje SSE de cada tipo de evento
   (`midi` → `MidiMessage`, `decision` → `DecisionMessage`, ambos `StreamMessage`). `LiveStreamObserver` y
   `LiveStreamPublisher` piden el mensaje por el tipo y no conocen las clases concretas.
+- **Singleton**: `EngineStatus` (`engine/`) guarda lo que se sabe del motor de IA según sus últimas llamadas
+  (`UNKNOWN`, `UP` o `DOWN`, fallos seguidos, último error). La instancia es única y se crea de forma perezosa con el
+  idiom del holder; sus métodos son `synchronized` porque lo usan varios hilos. `IaEngineClient` lo actualiza en cada
+  llamada de decisión y `GET /api/v1/engine/status` lo muestra (no consulta al motor, solo informa de la última llamada).
 - `MidiEventService` es el único flujo de un evento: consulta la IA, guarda **un** registro y publica un evento interno.
 - `LiveStreamPublisher` convierte ese evento interno en un mensaje SSE.
