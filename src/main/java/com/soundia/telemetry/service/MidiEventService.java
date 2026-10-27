@@ -36,20 +36,24 @@ public class MidiEventService {
      */
     public AiDecisionDto decideAndStore(Integer controlId, Integer value) {
         AiDecisionDto decision = iaEngine.calculateMix(controlId, value);
-        DjSessionLog saved = repository.save(inCurrentSession(new DjSessionLog(controlId, value, decision.action())));
+        DjSessionLog saved = repository.save(logOf(controlId, value, decision.action()));
         events.publishEvent(new MidiDecisionEvent(saved, decision.status()));
         return decision;
     }
 
-    /** Asocia el registro a la sesion de DJ abierta, si la hay. */
-    private DjSessionLog inCurrentSession(DjSessionLog log) {
-        log.setSessionId(sessions.activeSessionId());
-        return log;
+    /** El registro del evento, asociado a la sesion de DJ abierta si la hay. */
+    private DjSessionLog logOf(Integer controlId, Integer value, String action) {
+        return DjSessionLog.builder()
+                .controlId(controlId)
+                .value(value)
+                .action(action)
+                .sessionId(sessions.activeSessionId())
+                .build();
     }
 
     /** Guarda el evento sin decision cuando el motor de IA no esta disponible. */
     public void storeWithoutDecision(Integer controlId, Integer value) {
-        DjSessionLog saved = repository.save(inCurrentSession(new DjSessionLog(controlId, value)));
+        DjSessionLog saved = repository.save(logOf(controlId, value, null));
         events.publishEvent(new MidiDecisionEvent(saved, DecisionMessage.UNAVAILABLE));
     }
 }

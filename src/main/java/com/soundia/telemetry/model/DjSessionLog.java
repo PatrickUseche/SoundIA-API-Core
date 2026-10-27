@@ -46,6 +46,11 @@ public class DjSessionLog {
         this.action = action;
     }
 
+    /** Patron Builder: arma un registro con los campos opcionales que haga falta (accion, sesion). */
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public Long getId() {
         return id;
     }
@@ -92,5 +97,49 @@ public class DjSessionLog {
 
     public void setCreatedIn(LocalDateTime createdIn) {
         this.createdIn = createdIn;
+    }
+
+    /** Construye un {@link DjSessionLog}; el control y el valor son obligatorios, el resto es opcional. */
+    public static final class Builder {
+
+        private Integer controlId;
+        private Integer value;
+        private String action;
+        private Long sessionId;
+
+        private Builder() {
+        }
+
+        public Builder controlId(Integer controlId) {
+            this.controlId = controlId;
+            return this;
+        }
+
+        public Builder value(Integer value) {
+            this.value = value;
+            return this;
+        }
+
+        /** Decision de la IA; se omite cuando el motor no estuvo disponible. */
+        public Builder action(String action) {
+            this.action = action;
+            return this;
+        }
+
+        /** Sesion de DJ abierta cuando llego el evento; se omite si no habia ninguna. */
+        public Builder sessionId(Long sessionId) {
+            this.sessionId = sessionId;
+            return this;
+        }
+
+        /** @throws IllegalStateException si falta el control o el valor */
+        public DjSessionLog build() {
+            if (controlId == null || value == null) {
+                throw new IllegalStateException("Un registro MIDI necesita controlId y value.");
+            }
+            DjSessionLog log = new DjSessionLog(controlId, value, action);
+            log.setSessionId(sessionId);
+            return log;
+        }
     }
 }

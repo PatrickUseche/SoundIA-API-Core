@@ -83,6 +83,6 @@ Acordado con el usuario (2026-10-27): implementar 5 patrones en la lógica del b
 - [x] docs(review): informe de patrones de diseño del API Core [12.1]
 - [ ] docs(patterns): Observer ya existe en `telemetry/pattern/` (`DjControllerReader` + `MidiObserver`); solo se documenta [12.2]
 - [x] feat(queue): Strategy: orden de la cola (`QueueOrderStrategy`: FIFO, más reciente primero, aleatorio) elegible con `?order=` [12.3]
-- [ ] refactor(telemetry): Builder para `DjSessionLog` y los cuerpos de petición de `AutoDjClient` [12.4]
+- [x] refactor(telemetry): Builder para `DjSessionLog` y los cuerpos de petición de `AutoDjClient` [12.4]
 - [ ] feat(stream): Factory Method para los mensajes SSE [12.5]
 - [ ] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]
