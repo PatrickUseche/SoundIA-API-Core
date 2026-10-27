@@ -4,7 +4,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.soundia.config.IaEngineProperties;
@@ -33,14 +32,7 @@ public class IaEngineClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<DjSessionLogDto> request = new HttpEntity<>(new DjSessionLogDto(controlId, value), headers);
 
-        EngineStatus status = EngineStatus.getInstance();
-        try {
-            AiDecisionDto decision = restTemplate.postForObject(properties.mixCalculateUrl(), request, AiDecisionDto.class);
-            status.recordSuccess();
-            return decision;
-        } catch (RestClientException e) {
-            status.recordFailure(e.getMessage());
-            throw e;
-        }
+        return EngineStatus.getInstance().track(
+                () -> restTemplate.postForObject(properties.mixCalculateUrl(), request, AiDecisionDto.class));
     }
 }

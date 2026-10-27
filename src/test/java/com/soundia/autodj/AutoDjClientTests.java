@@ -18,6 +18,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import com.soundia.config.IaEngineProperties;
 import com.soundia.config.RestClientConfig;
+import com.soundia.engine.EngineStatus;
 import com.sun.net.httpserver.HttpServer;
 
 /** Prueba el cliente contra un servidor HTTP local que hace de Django. */
@@ -33,6 +34,7 @@ class AutoDjClientTests {
 
     @BeforeEach
     void startServer() throws IOException {
+        EngineStatus.getInstance().reset();
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.createContext("/api/mix/", exchange -> {
             ruta.set(exchange.getRequestURI().getPath());
@@ -51,6 +53,7 @@ class AutoDjClientTests {
     @AfterEach
     void stopServer() {
         server.stop(0);
+        EngineStatus.getInstance().reset();
     }
 
     private AutoDjClient client() {
@@ -149,5 +152,30 @@ class AutoDjClientTests {
         assertEquals("{\"weights\":{\"tempo\":0.2},\"learned\":true,\"samples\":40}", resultado);
         assertEquals("GET", metodo.get());
         assertEquals("/api/mix/weights", ruta.get());
+    }
+
+    @Test
+    void unaRespuestaCorrectaDejaElMotorArriba() {
+        client().weights();
+
+        assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
+    }
+
+    @Test
+    void unErrorDelMotorLoMarcaComoCaido() {
+        status = 500;
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class, () -> client().nextTracks(7, null));
+
+        assertEquals(EngineStatus.State.DOWN, EngineStatus.getInstance().snapshot().state());
+    }
+
+    @Test
+    void unErrorDePeticionNoMarcaElMotorComoCaido() {
+        status = 404;
+
+        assertThrows(HttpClientErrorException.class, () -> client().transition(1, 2));
+
+        assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
     }
 }

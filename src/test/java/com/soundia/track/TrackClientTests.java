@@ -21,6 +21,7 @@ import org.springframework.web.client.RestClientException;
 
 import com.soundia.config.IaEngineProperties;
 import com.soundia.config.RestClientConfig;
+import com.soundia.engine.EngineStatus;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -47,6 +48,7 @@ class TrackClientTests {
 
     @BeforeEach
     void startServer() throws IOException {
+        EngineStatus.getInstance().reset();
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.createContext("/api/audio/", exchange -> {
             metodo.set(exchange.getRequestMethod());
@@ -76,6 +78,7 @@ class TrackClientTests {
     @AfterEach
     void stopServer() {
         server.stop(0);
+        EngineStatus.getInstance().reset();
     }
 
     private TrackClient client() {
@@ -334,4 +337,29 @@ class TrackClientTests {
         assertEquals(409, e.getStatusCode().value());
     }
 
+
+    @Test
+    void listarPistasConExitoDejaElMotorArriba() {
+        client().listTracks();
+
+        assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
+    }
+
+    @Test
+    void borrarUnaPistaConFalloDelMotorLoMarcaComoCaido() {
+        status = 500;
+
+        assertThrows(org.springframework.web.client.HttpServerErrorException.class, () -> client().deleteTrack(7));
+
+        assertEquals(EngineStatus.State.DOWN, EngineStatus.getInstance().snapshot().state());
+    }
+
+    @Test
+    void pedirUnaPistaQueNoExisteNoMarcaElMotorComoCaido() {
+        status = 404;
+
+        assertThrows(HttpClientErrorException.class, () -> client().getTrack(99));
+
+        assertEquals(EngineStatus.State.UP, EngineStatus.getInstance().snapshot().state());
+    }
 }

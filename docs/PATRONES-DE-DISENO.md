@@ -141,7 +141,8 @@ Pruebas: `StreamMessageFactoryTests`, `LiveStreamObserverTests`, `LiveStreamPubl
 estado único, visible para todos los hilos, de si responde o no.
 
 **Solución:** `EngineStatus` con constructor privado e instancia creada de forma perezosa con el idiom del holder;
-métodos `synchronized`. `IaEngineClient` lo actualiza en cada llamada y `GET /api/v1/engine/status` lo muestra.
+métodos `synchronized`. Los tres clientes del motor (`IaEngineClient`, `AutoDjClient`, `TrackClient`) lo actualizan con
+`track(...)` en cada llamada y `GET /api/v1/engine/status` lo muestra.
 
 ```mermaid
 classDiagram
