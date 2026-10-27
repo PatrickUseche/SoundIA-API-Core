@@ -75,3 +75,14 @@ Acordado con el usuario (2026-10-24): el DJ usa la versión de la nube, por sesi
 - [x] fix(tracks): la subida de una pista reintenta hasta 5 veces con una espera que crece (5, 10, 15 y 20 s), para sobrevivir al reinicio del motor [9.8]
 - [x] docs(user): guía de una página para el DJ (subir, mezclar, grabar, revisar y qué hacer si algo falla) [11.7]
 - [x] chore(deploy): `scripts/verificar-nube.ps1`, que despierta los servidores y comprueba API, login, motor y biblioteca antes de una sesión; los avisos pasan a «hasta tres minutos» (medido: el API tarda ~135 s en despertar) [11.11]
+
+## Fase 12 — Patrones de diseño (materia Patrones de Software)
+
+Acordado con el usuario (2026-10-27): implementar 5 patrones en la lógica del backend Java, un PR por patrón. Revisión previa en `docs/review/2026-10-27-soundia-api-core-pattern-review.md`.
+
+- [x] docs(review): informe de patrones de diseño del API Core [12.1]
+- [ ] docs(patterns): Observer ya existe en `telemetry/pattern/` (`DjControllerReader` + `MidiObserver`); solo se documenta [12.2]
+- [ ] feat(queue): Strategy: orden de la cola (`QueueOrderStrategy`: FIFO, más reciente primero, aleatorio) elegible con `?order=` [12.3]
+- [ ] refactor(telemetry): Builder para `DjSessionLog` y los cuerpos de petición de `AutoDjClient` [12.4]
+- [ ] feat(stream): Factory Method para los mensajes SSE [12.5]
+- [ ] feat(engine): Singleton explícito y thread-safe con el estado del motor de IA (`EngineStatus`) [12.6]
